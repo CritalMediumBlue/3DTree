@@ -5,9 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Graph Plotting with THREE.js</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        .button-container {
+            position: fixed;
+            left: 10px;
+            top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .button-container button {
+            padding: 3px 3px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 80px;
+            background-color: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s ease;
+        }
+        .button-container button:hover {
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        #fileInput {
+            font-size: 12px;
+            margin-bottom: 5px;
+            
+        }
+    </style>
 </head>
 <body>
-    <input type="file" id="fileInput" />
+    <div class="button-container">
+        <input type="file" id="fileInput" />
+        <button id="button1">Button 1</button>
+        <button id="button2">Button 2</button>
+        <button id="button3">Button 3</button>
+        <button id="button4">Button 4</button>
+    </div>
     <script src="main.js"></script>
 </body>
 </html>

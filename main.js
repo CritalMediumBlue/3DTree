@@ -1,91 +1,122 @@
 // Set up the scene, camera, and renderer
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Constants
-const size = 1.5;
+const size = 400;
 const divisions = 40;
 const planeOpacity = 0.1;
 const gridOpacity = 0.5;
+const xyColor = 0x0000ff;  // Blue color for XY plane
 
-// Helper function to create grid helpers
-function createGridHelper(size, divisions, color, rotation) {
-    const gridHelper = new THREE.GridHelper(size, divisions, color, color);
-    if (rotation) {
-        gridHelper.rotation.set(rotation.x, rotation.y, rotation.z);
-    }
+// Helper function to create grid helper and plane for XY plane
+const createXYGridAndPlane = () => {
+    const gridHelper = new THREE.GridHelper(size, divisions, xyColor, xyColor);
+    gridHelper.rotation.x = Math.PI / 2;
     gridHelper.material.fog = true;
     gridHelper.material.transparent = true;
     gridHelper.material.opacity = gridOpacity;
-    return gridHelper;
-}
 
-// Helper function to create planes
-function createPlane(size, color, rotation) {
     const plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(size, size),
-        new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide, transparent: true, opacity: planeOpacity, fog: true })
+        new THREE.PlaneGeometry(size, size*0.6),
+        new THREE.MeshBasicMaterial({ color: xyColor, side: THREE.DoubleSide, transparent: true, opacity: planeOpacity, fog: true })
     );
-    if (rotation) {
-        plane.rotation.set(rotation.x, rotation.y, rotation.z);
+
+    scene.add(gridHelper);
+    scene.add(plane);
+};
+
+// Create grid and plane for XY plane
+createXYGridAndPlane();
+
+scene.fog = new THREE.Fog(0x000000, 0.05, 1000);
+
+// Set up camera position
+camera.position.set(200, 200, 200);
+camera.lookAt(0, 0, 0);
+
+let particleData = null;
+let particles = [];
+let currentTimeStep = 0;
+
+// Function to create a particle
+const createParticle = (x, y) => {
+    const geometry = new THREE.SphereGeometry(2, 2, 2);
+    const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const particle = new THREE.Mesh(geometry, material);
+    particle.position.set(x, y, 0);
+    scene.add(particle);
+    return particle;
+};
+
+// Function to update particle positions
+const updateParticles = (timeStep) => {
+    if (!particleData || !particleData[timeStep]) {
+        console.warn(`No data available for time step ${timeStep}`);
+        return;
     }
-    return plane;
-}
 
-// Helper function to create points
-function createPoint(color, position) {
-    const point = new THREE.Mesh(
-        new THREE.SphereGeometry(0.01, 0, 0),
-        new THREE.MeshBasicMaterial({ color: color })
-    );
-    point.position.set(position.x, position.y, position.z);
-    return point;
-}
+    const stepData = particleData[timeStep];
+    stepData.forEach((data, index) => {
+        if (index >= particles.length) {
+            particles.push(createParticle(data.x*4, (data.y-170)*4));
+        } else {
+            particles[index].position.set(data.x*4, (data.y-170)*4, 0);
+        }
+    });
+};
 
-// Add XY plane and grid
-scene.add(createGridHelper(size, divisions, 0x0000ff, { x: Math.PI / 2, y: 0, z: 0 }));
-scene.add(createPlane(size, 0x0000ff));
+// Handle file upload
+document.getElementById('fileInput').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    const reader = new FileReader();
 
+    reader.onload = (e) => {
+        try {
+            particleData = JSON.parse(e.target.result);
+            currentTimeStep = 0;
+            if (particleData && Object.keys(particleData).length > 0) {
+                updateParticles(currentTimeStep.toString());
+            } else {
+                console.warn('Parsed data is empty or invalid');
+            }
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+        }
+    };
 
-scene.add(createPoint(0xff0000, { x: size / 2, y: 0, z: 0 }));
-scene.add(createPoint(0x00ff00, { x: 0, y: size / 2, z: 0 }));
+    reader.readAsText(file);
+});
 
-
-scene.fog = new THREE.Fog(0x000000, 0.05, 4);
-
-//////////////////////////////////////// Data visualization  ////////////////////////////////////////
-
-// Position and orient the camera
 let angle = 0;
-let quaternionPosition = new THREE.Quaternion();
-let quaternionLookAt = new THREE.Quaternion();
 
-
-
-// Create an animation loop to render the scene
-function animate() {
+// Animation loop
+const animate = () => {
     requestAnimationFrame(animate);
-    angle += 0.002;
 
-    let x = 1 / Math.sqrt(8);
-    let y = 1 / Math.sqrt(8);
-    let z = Math.sqrt(3 / 4);
+    if (particleData && Object.keys(particleData).length > 0) {
+        currentTimeStep = (currentTimeStep + 1) % (Object.keys(particleData).length);
+        updateParticles(currentTimeStep.toString());
+    }
 
-    quaternionPosition.setFromAxisAngle(new THREE.Vector3(0, 0, 1), angle);  
-    const cameraPosition = new THREE.Vector3(x, y, z); 
-    cameraPosition.applyQuaternion(quaternionPosition); 
-    camera.position.copy(cameraPosition);
+    angle += 0.005;
+    camera.position.x = 150 * Math.cos(angle);
+    camera.position.y = 150 * Math.sin(angle);
+    camera.position.z = 200;
+    camera.lookAt(0, 0, 0);
 
-    const directionToOrigin = cameraPosition.normalize().multiplyScalar(-1); // Direction to the origin
-
-    quaternionLookAt.setFromUnitVectors(new THREE.Vector3(0, 0, -1), directionToOrigin);
-
-    camera.quaternion.copy(quaternionLookAt);
 
     renderer.render(scene, camera);
-}
+};
 
 animate();
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
