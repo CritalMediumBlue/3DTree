@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to JSON Parser (Grouped by Time or ID, Rounded to 2 Decimals)</title>
+    <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
+</head>
+<body>   
+    <h1>Text to JSON Parser (Grouped by Time or ID)</h1>
+    <input type="file" id="fileInput" accept=".txt">
+    <button onclick="parseFile('time')">Parse and Group by Time</button>
+    <button onclick="parseFile('id')">Parse and Group by ID</button>
+ 
+    <script>
+        async function parseFile(groupBy) {
+            try {
+                const file = document.getElementById('fileInput').files[0];
+                if (!file) throw new Error('Please select a file first.');
+
+                await processFileStream(file, groupBy);
+
+                alert('Parsing complete. The file should start downloading automatically.');
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        async function processFileStream(file, groupBy) {
+            const reader = file.stream().getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            const fileName = groupBy === 'time' ? 'grouped_by_time.json' : 'grouped_by_id.json';
+            const fileStream = streamSaver.createWriteStream(fileName);
+            const writer = fileStream.getWriter();
+            const encoder = new TextEncoder();
+
+            await writer.write(encoder.encode('{\n'));
+
+            let isFirstGroup = true;
+            let currentGroup = null;
+            let groupData = {};
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                let lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    const jsonObject = createJsonObject(line);
+                    if (jsonObject) {
+                        const groupKey = groupBy === 'time' ? jsonObject.time : jsonObject.ID;
+
+                        if (groupBy === 'time') {
+                            if (currentGroup !== groupKey) {
+                                if (currentGroup !== null) {
+                                    await writeGroup(writer, encoder, currentGroup, Object.values(groupData), isFirstGroup);
+                                    isFirstGroup = false;
+                                }
+                                currentGroup = groupKey;
+                                groupData = {};
+                            }
+                            const { time, ...objectWithoutTime } = jsonObject;
+                            groupData[jsonObject.ID] = objectWithoutTime;
+                        } else {
+                            if (!groupData[groupKey]) {
+                                groupData[groupKey] = [];
+                            }
+                            const { ID, ...objectWithoutID } = jsonObject;
+                            groupData[groupKey].push(objectWithoutID);
+                        }
+                    }
+                }
+            }
+
+            if (buffer) {
+                const jsonObject = createJsonObject(buffer);
+                if (jsonObject) {
+                    const groupKey = groupBy === 'time' ? jsonObject.time : jsonObject.ID;
+                    if (groupBy === 'time') {
+                        const { time, ...objectWithoutTime } = jsonObject;
+                        groupData[jsonObject.ID] = objectWithoutTime;
+                    } else {
+                        if (!groupData[groupKey]) {
+                            groupData[groupKey] = [];
+                        }
+                        const { ID, ...objectWithoutID } = jsonObject;
+                        groupData[groupKey].push(objectWithoutID);
+                    }
+                }
+            }
+
+            if (groupBy === 'time') {
+                if (currentGroup !== null) {
+                    await writeGroup(writer, encoder, currentGroup, Object.values(groupData), isFirstGroup);
+                }
+            } else {
+                for (const [id, data] of Object.entries(groupData)) {
+                    await writeGroup(writer, encoder, id, data, isFirstGroup);
+                    isFirstGroup = false;
+                }
+            }
+
+            await writer.write(encoder.encode('\n}'));
+            await writer.close();
+        } 
+
+        async function writeGroup(writer, encoder, groupKey, groupData, isFirstGroup) {
+            const groupString = `${isFirstGroup ? '' : ',\n'}"${groupKey}": ${JSON.stringify(groupData, (key, value) => {
+                if (typeof value === 'number') {
+                    return Number(value.toFixed(2));
+                }
+                return value;
+            }, 2)}`;
+            await writer.write(encoder.encode(groupString));
+        }
+
+        function createJsonObject(line) {
+            const columns = line.split('\t');
+            if (columns.length === 6) {
+                return {
+                    time: columns[0],
+                    x: roundToTwoDecimals(columns[1]),
+                    y: roundToTwoDecimals(columns[2]),
+                    angle: roundToTwoDecimals(columns[3]),
+                    length: roundToTwoDecimals(columns[4]),
+                    ID: columns[5]
+                };
+            }
+            return null;
+        }
+
+        function roundToTwoDecimals(value) {
+            return Number(parseFloat(value).toFixed(2));
+        }
+    </script>
+</body>
+</html>
