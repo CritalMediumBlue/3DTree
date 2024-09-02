@@ -15,7 +15,7 @@
     <script>
         async function parseFile(groupBy) {
             try {
-                const file = document.getElementById('fileInput').files[0];
+                const file = document.getElementById('fileInput').files[0]; 
                 if (!file) throw new Error('Please select a file first.');
 
                 await processFileStream(file, groupBy);
