@@ -3,36 +3,48 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+const Z_position = 100;
 
-const size = 100;
-const divisions = 20;
-const gridHelper = new THREE.GridHelper(size * 4, divisions);
-gridHelper.rotation.x = Math.PI / 2;
-gridHelper.material.fog = true;
-scene.add(gridHelper);
-scene.fog = new THREE.Fog(0x000000, 20, 450);
+scene.fog = new THREE.Fog(0x000000, 5, Z_position*2.5);
 
 const particleData = [];
 const particles = [];
-let currentTimeStep = 0;
+let currentTimeStep = 1;
 let numberOfTimeSteps = null;
+const numberOflayers = 7;
 
-const material = new THREE.MeshBasicMaterial({
-    color: 0xf00000,
-    transparent: true,
-    opacity: 0.5
-});
-const geometry = new THREE.PlaneGeometry(1, 2); // (length, width)
+const getMaterial = (Z) => {
+    const maxOpacity = 1;
+    const maxRed = 1;
+    const maxGreen = 1;
+
+    const opacity = maxOpacity - Math.abs(maxOpacity - (2 / (numberOflayers * Z_OFFSET)) * Z);
+    
+    const r = Math.floor(255 * (Math.abs(maxRed - (2 / (numberOflayers * Z_OFFSET)) * Z)));
+    const g = Math.floor(255 * (maxGreen - Math.abs(maxGreen - (2 / (numberOflayers * Z_OFFSET)) * Z)));
+    const color = (r << 16) | (g << 8);
+    
+    const material = new THREE.LineBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: opacity,
+    });
+    return material;
+}
+const Z_OFFSET = 2; // Offset between timesteps
+
+// Create a base geometry for the particles
+const baseGeometry = new THREE.BoxGeometry(1, 1, 0);  // (length, width, height)
+const edges = new THREE.EdgesGeometry(baseGeometry);
+
 let angle = 0;
-camera.position.z = 100;
 
-const speed = 0.1;
-const Z_OFFSET = 15; // Offset between timesteps
+const speed = 1;
 
 // Particle pool for better performance
 const createParticlePool = (maxParticles) => {
     for (let i = 0; i < maxParticles; i++) {
-        const particleMesh = new THREE.Mesh(geometry, material);
+        const particleMesh = new THREE.LineSegments(edges, getMaterial(0));
         particleMesh.visible = false;
         scene.add(particleMesh);
         particles.push(particleMesh);
@@ -40,36 +52,47 @@ const createParticlePool = (maxParticles) => {
 };
 
 const updateParticles = (timeStep) => {
-    const currentStepData = particleData[Math.floor(timeStep)];
-    const nextStepData = particleData[Math.floor((timeStep + 1) % numberOfTimeSteps)];
-    
+    const integerPart = Math.floor(timeStep);
     const fractionalPart = timeStep % 1;
     const baseZ = fractionalPart * Z_OFFSET;
 
-    particles.forEach((particle, index) => {
-        if (index < currentStepData.length) {
-            const data = currentStepData[index];
-            updateParticle(particle, data, baseZ);
-            particle.visible = true;
-        } else if (index < currentStepData.length + nextStepData.length) {
-            const data = nextStepData[index - currentStepData.length];
-            updateParticle(particle, data, baseZ + Z_OFFSET);
-            particle.visible = true;
-        } else {
-            particle.visible = false;
-        }
+    const layers = [];
+    const materials = [];
+
+    for (let i = numberOflayers-1; i >= 0; i--) {
+        layers.push(particleData[integerPart + i]);
+        materials.push(getMaterial(baseZ + Z_OFFSET * (numberOflayers-1 - i)));
+    }
+
+    let particleIndex = 0;
+    layers.forEach((layer, layerIndex) => {
+        layer.forEach(data => {
+            if (particleIndex < particles.length) {
+                const particle = particles[particleIndex];
+                updateParticle(particle, data, baseZ + Z_OFFSET * layerIndex, materials[layerIndex]);
+                particle.visible = true;
+                particleIndex++;
+            }
+        });
     });
+
+    // Hide unused particles
+    for (let i = particleIndex; i < particles.length; i++) {
+        particles[i].visible = false;
+    }
 };
 
-const updateParticle = (particle, data, z) => {
+const updateParticle = (particle, data, z, material) => {
     const x = data.x * 4;
     const y = (data.y - 170) * 4;
     const length = data.length * 4;
+    const width = 1.5; // You can adjust this value to change the width of the particles
     const particleAngle = data.angle * Math.PI + Math.PI / 2;
 
-    particle.scale.set(length, 1.5, 1);
+    particle.scale.set(length, width, 1);  
     particle.position.set(x, y, z);
     particle.rotation.z = particleAngle;
+    particle.material = material;
 };
 
 // File input handler
@@ -90,7 +113,7 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
         let maxParticles = Math.max(...Object.values(particleData).map(step => step.length));
         let meanAmount = Object.values(particleData).reduce((acc, step) => acc + step.length, 0) / Object.keys(particleData).length;
         console.log(`Mean amount of particles: ${meanAmount}`);
-        createParticlePool(maxParticles * 2);
+        createParticlePool(maxParticles * numberOflayers);
     };
     reader.readAsText(file);
 });
@@ -99,13 +122,13 @@ const animate = () => {
     requestAnimationFrame(animate);
 
     if (particleData.length > 0) {
-        currentTimeStep = (currentTimeStep + speed * 0.1) % numberOfTimeSteps;
+        currentTimeStep = (currentTimeStep + speed * 0.1) % numberOfTimeSteps;  // this is a number between 0 and numberOfTimeSteps.
         updateParticles(currentTimeStep);
     }
 
-    angle = angle + 0.005 * speed;
-    camera.position.set(200 * Math.cos(angle), 200 * Math.sin(angle), 150 + 50 * Math.sin(angle * 0.5));
-    camera.lookAt(0, 0, Z_OFFSET * 2);    
+    angle = angle + 0.0005 * speed;
+    camera.position.set(150 * Math.cos(angle), 150 * Math.sin(angle), -Z_position);
+    camera.lookAt(0, 0, 0);    
 
     renderer.render(scene, camera);
 };
