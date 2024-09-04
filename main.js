@@ -3,7 +3,6 @@ const FOV = 75;
 const NEAR_PLANE = 10;
 const FAR_PLANE = 400;
 const Z_POSITION = -180;
-const NUMBER_OF_LAYERS = 10;
 const Z_OFFSET = 5;
 const ROTATION_SPEED = 0.005;
 const ANIMATION_SPEED = 0.5;
@@ -24,13 +23,13 @@ const farFog = Math.abs(Z_POSITION * 2.3);
 const nearFog = Math.abs(Z_POSITION / 2.3);
 scene.fog = new THREE.Fog(0x000000, nearFog, farFog);
 
-// Particle system variables
+// Particles
 const particleData = [];
 let currentTimeStep = 1;
 let numberOfTimeSteps = null;
 
 // Create container
-const containerGeometry = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, NUMBER_OF_LAYERS * Z_OFFSET);
+const containerGeometry = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, 10);
 const containerEdges = new THREE.EdgesGeometry(containerGeometry);
 const container = new THREE.LineSegments(containerEdges, new THREE.LineBasicMaterial({color: 0xffffff}));
 scene.add(container);
@@ -48,7 +47,7 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
             
             // Convert string keys to integer keys
             Object.keys(data).forEach(key => {
-                const intKey = parseInt(key, 10);
+                const intKey = parseInt(key, 10); 
                 particleData[intKey] = data[key];
             });
             
