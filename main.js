@@ -3,14 +3,14 @@ const FOV = 75;  // Field of view
 const NEAR_PLANE = 10;
 const FAR_PLANE = 800;
 const Z_POSITION = -150;
-const Z_OFFSET = 2;
-const ROTATION_SPEED = 0.005;
+const Z_OFFSET = 0.5;
+const ROTATION_SPEED = 0.05;
 const ANIMATION_SPEED = 0.99;
 const CONTAINER_SIZE = { width: 400, height: 240 };
 const SCALE_FACTOR = 4;
 const Y_OFFSET = 170;
 const HALF_PI = Math.PI / 2;
-const MAX_PARTICLES = 3000; // Maximum number of particles to keep in the scene
+const MAX_PARTICLES = 8000; // Maximum number of particles to keep in the scene
 const allIds = [];
 let interestingIdsSet; // Changed to a Set for faster lookups
 const MAX_PARTICLES_CURRENT = 1200;
@@ -18,12 +18,16 @@ const MAX_CONTAINERS = 100;
 let addTrace = true;
 let end = false;
 const lineOpacity = 0.5;
+let cameraZ = Z_POSITION;
+let lookX = 0;
+let lookY = 0;
+
 
 // Three.js setup
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, NEAR_PLANE, FAR_PLANE);
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth-17, window.innerHeight-17);
 document.body.appendChild(renderer.domElement);
 
 // Fog setup
@@ -55,7 +59,6 @@ createParticlePool(MAX_PARTICLES_CURRENT);
 function updateParticles(timeStep) {
     const currentLayer = particleData[Math.floor(timeStep)] || [];
     let particleIndex = 0;
-    let somethingWasUpdated = false;
    
     currentLayer.forEach(data => {
                 if (interestingIdsSet.has(data.ID) && particleIndex < particles.length) {
@@ -73,7 +76,6 @@ function updateParticles(timeStep) {
                     particle.visible = true;
                     
                     particleIndex++;
-                    somethingWasUpdated = true;
 
                 }
                 
@@ -87,9 +89,6 @@ function updateParticles(timeStep) {
     }
 
 
-    if (!somethingWasUpdated && currentTimeStep > 1) {
-        end = true;
-    }
 }
 
     
@@ -106,8 +105,9 @@ const addedContainers = []; // Array to store added container
 
 // Create container
 let container;
+const thickness =  10;
+
 function createContainer(timeStep) {
-    const thickness =  0;
     const containerGeometry = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, thickness);
     const containerEdges = new THREE.EdgesGeometry(containerGeometry);
     container = new THREE.LineSegments(containerEdges, new THREE.LineBasicMaterial({color: 0xffffff}));
@@ -118,7 +118,7 @@ function createContainer(timeStep) {
 
 createContainer(currentTimeStep);
 
-const staticContainer = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, 0);
+const staticContainer = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, thickness);
 const staticContainerEdges = new THREE.EdgesGeometry(staticContainer);
 const staticContainerLine = new THREE.LineSegments(staticContainerEdges, new THREE.LineBasicMaterial({color: 0xffffff}));
 staticContainerLine.position.z = 0;
@@ -128,7 +128,7 @@ const material = new THREE.LineBasicMaterial({
     color: 0xffffff, 
     transparent: true, 
     opacity: lineOpacity,
-    linewidth: 4 // Increased line width (note: this may not be supported in all WebGL renderers)
+    linewidth: 4, // Increased line width (note: this may not be supported in all WebGL renderers)
 });
 
 const materialGreen = new THREE.LineBasicMaterial({ 
@@ -202,17 +202,45 @@ function generateInterestingIds() {
 
 // add an event listener to restart the animation when the user clicks the s key
 document.addEventListener('keydown', (event) => {
-    if (event.key === 's') {
+    if (event.key === 'm') {
         restart()
-
         randomInt = Math.floor(Math.random() * (1000)) + 1000;
-
         generateInterestingIds();
         createContainer(currentTimeStep);
     }
     else if (event.key === 't') {
         addTrace = !addTrace;
     }
+    else if (event.key === 'ArrowUp') {
+        cameraZ -= Z_OFFSET*2;
+    }
+    else if (event.key === 'ArrowDown') {
+        cameraZ += Z_OFFSET*2;
+    }
+    else if (event.key === 'ArrowLeft') {
+        angle -= ROTATION_SPEED;
+    }
+    else if (event.key === 'ArrowRight') {
+        angle += ROTATION_SPEED;
+    }
+    else if (event.key === 'r') {
+        restart();
+    }
+    else if (event.key === 'e') {
+        end = !end;
+        currentTimeStep = numberOfTimeSteps;
+    } else if (event.key === 'w') {
+        lookY += 2;
+    } else if (event.key === 's') {
+        lookY -= 2;
+    } else if (event.key === 'd') {
+        lookX -= 2;
+    } else if (event.key === 'a') {
+        lookX += 2;
+    } 
+
+    
+    
     
 });
 
@@ -220,9 +248,11 @@ function animate() {
     requestAnimationFrame(animate);
 
     if (particleData.length > 0 &&  end === false) {
-        currentTimeStep = (currentTimeStep + ANIMATION_SPEED) % numberOfTimeSteps;
-
-  
+        if (currentTimeStep >= numberOfTimeSteps) {
+            restart();
+        } else {
+        currentTimeStep = (currentTimeStep + ANIMATION_SPEED);
+        }
 
         if(addedParticles.length > MAX_PARTICLES) {
             removeOldParticles(); // Remove old particles before adding new ones
@@ -236,24 +266,24 @@ function animate() {
         if (Math.floor(currentTimeStep) % 10 === 0) {
             createContainer(currentTimeStep);
         }
-
         updateParticles(currentTimeStep);
-
-    
-        
     }
 
-    angle += ROTATION_SPEED * ANIMATION_SPEED;
-    const cameraX = 120 * Math.cos(angle);
-    const cameraY = 120 * Math.sin(angle);
-    let cameraZ = -Z_OFFSET * currentTimeStep + Z_POSITION;
-    if (end === false){
-        cameraZ = -Z_OFFSET * currentTimeStep+ Z_POSITION;
-    } else {
-        cameraZ += 5;
+    //angle += ROTATION_SPEED * ANIMATION_SPEED;
+    const cameraX = lookX + 120 * Math.cos(angle);
+    const cameraY = lookY + 120 * Math.sin(angle);
+    if (end === false && currentTimeStep > 1) {
+        cameraZ -=  Z_OFFSET;
+        camera.position.set(cameraX, cameraY, cameraZ);
+        camera.lookAt(lookX, lookY, -Z_OFFSET * currentTimeStep);   
+    } else if (end === true) {
+        camera.position.set(cameraX, cameraY, cameraZ);
+        camera.lookAt(lookX, lookY, cameraZ - Z_POSITION);   
+
+    } else if (end === false && currentTimeStep <= 1) {
+        camera.position.set(cameraX, cameraY, cameraZ);
+        camera.lookAt(lookX, lookY, -Z_OFFSET * currentTimeStep);    
     }
-    camera.position.set(cameraX, cameraY, cameraZ);
-    camera.lookAt(cameraX*0.5, cameraY*0.5, -Z_OFFSET * currentTimeStep);    
     staticContainerLine.position.z = -Z_OFFSET * currentTimeStep;
     renderer.render(scene, camera);
 }
@@ -280,6 +310,7 @@ function restart() {
     addedContainers.length = 0;
 
     createContainer(currentTimeStep);
+    cameraZ = Z_POSITION;
 
 }
 
@@ -306,8 +337,8 @@ function addParticles(timeStep) {
 
             //Let's place a point at the start and end of the line
              const points = [];
-                points.push(new THREE.Vector3(startX, startY, z));
-                points.push(new THREE.Vector3(endX, endY, z));
+                points.push(new THREE.Vector3(startX, startY, z-Z_OFFSET/2));
+                points.push(new THREE.Vector3(endX, endY, z-Z_OFFSET/2));
                 const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
 
                 const pointsObject = new THREE.Points(geometryPoints, materialPoints);
