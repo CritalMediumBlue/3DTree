@@ -17,7 +17,7 @@ const MAX_PARTICLES_CURRENT = 1200;
 const MAX_CONTAINERS = 100;
 let addTrace = true;
 let end = false;
-const lineOpacity = 0.5;
+const lineOpacity = 0.4;
 let cameraZ = Z_POSITION;
 let lookX = 0;
 let lookY = 0;
@@ -31,8 +31,8 @@ renderer.setSize(window.innerWidth-17, window.innerHeight-17);
 document.body.appendChild(renderer.domElement);
 
 // Fog setup
-const farFog = Math.abs(Z_POSITION * 2);
-const nearFog = Math.abs(Z_POSITION / 3);
+const farFog = Math.abs(Z_POSITION * 1.5);
+const nearFog = Math.abs(Z_POSITION / 1.5);
 scene.fog = new THREE.Fog(0x1a000a, nearFog, farFog);
 
 // Particles
@@ -167,18 +167,18 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
         });
         
         numberOfTimeSteps = particleData.length;
-        generateInterestingIds();
+        generateInterestingIds( randomInt);
     };
     reader.readAsText(file);
 });
 
-let randomInt = 1697;//1466;
+let randomInt = 1466;
 
-function generateInterestingIds() {
+function generateInterestingIds(randomInt) {
     const interestingIds = [];
     const initialId = BigInt(randomInt);
     console.log(initialId);
-    const generations = 16; // Number of generations to add
+    const generations = 14; // Number of generations to add
 
     // Add the initial ID
     interestingIds.push(initialId);
@@ -205,7 +205,7 @@ document.addEventListener('keydown', (event) => {
     if (event.key === 'm') {
         restart()
         randomInt = Math.floor(Math.random() * (1000)) + 1000;
-        generateInterestingIds();
+        generateInterestingIds(randomInt);
         createContainer(currentTimeStep);
     }
     else if (event.key === 't') {
@@ -218,31 +218,61 @@ document.addEventListener('keydown', (event) => {
         cameraZ += Z_OFFSET*2;
     }
     else if (event.key === 'ArrowLeft') {
-        angle -= ROTATION_SPEED;
+        angle -= ROTATION_SPEED/2;
     }
     else if (event.key === 'ArrowRight') {
-        angle += ROTATION_SPEED;
+        angle += ROTATION_SPEED/2;
     }
     else if (event.key === 'r') {
+        generateInterestingIds(randomInt) 
+
         restart();
     }
     else if (event.key === 'e') {
         end = !end;
         currentTimeStep = numberOfTimeSteps;
+
     } else if (event.key === 'w') {
-        lookY += 2;
+        lookY += 1;
     } else if (event.key === 's') {
-        lookY -= 2;
+        lookY -= 1;
     } else if (event.key === 'd') {
-        lookX -= 2;
+        lookX -= 1;
     } else if (event.key === 'a') {
-        lookX += 2;
+        lookX += 1;
     } 
 
     
     
     
 });
+
+document.getElementById('button1').addEventListener('click', () => {
+    // Step 3: Change the variable's value
+    randomInt = 1581;
+    console.log('Button 1 clicked, myVariable:', randomInt);
+});
+
+document.getElementById('button2').addEventListener('click', () => {
+    randomInt = 1697;
+    console.log('Button 2 clicked, myVariable:', randomInt);
+});
+
+document.getElementById('button3').addEventListener('click', () => {
+    randomInt = 1303;
+    console.log('Button 3 clicked, myVariable:', randomInt);
+});
+
+document.getElementById('button4').addEventListener('click', () => {
+    randomInt = 1772;
+    console.log('Button 4 clicked, myVariable:', randomInt);
+});
+
+document.getElementById('button5').addEventListener('click', () => {
+    randomInt = 1466;
+    console.log('Button 5 clicked, myVariable:', randomInt);
+}
+);
 
 function animate() {
     requestAnimationFrame(animate);
