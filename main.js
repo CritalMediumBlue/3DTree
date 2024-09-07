@@ -1,20 +1,20 @@
 // Constants
 const FOV = 75;  // Field of view
 const NEAR_PLANE = 10;
-const FAR_PLANE = 800;
+const FAR_PLANE = 2000;
 const Z_POSITION = -150;
-const Z_OFFSET = 0.5;
+const Z_OFFSET = 5;
 const ROTATION_SPEED = 0.05;
 const ANIMATION_SPEED = 0.99;
 const CONTAINER_SIZE = { width: 400, height: 240 };
 const SCALE_FACTOR = 4;
 const Y_OFFSET = 170;
 const HALF_PI = Math.PI / 2;
-const MAX_PARTICLES = 8000; // Maximum number of particles to keep in the scene
+const MAX_PARTICLES = 5000; // Maximum number of particles to keep in the scene
 const allIds = [];
 let interestingIdsSet; // Changed to a Set for faster lookups
 const MAX_PARTICLES_CURRENT = 1200;
-const MAX_CONTAINERS = 100;
+const MAX_CONTAINERS = 20;
 let addTrace = true;
 let end = false;
 const lineOpacity = 0.4;
@@ -31,28 +31,73 @@ renderer.setSize(window.innerWidth-17, window.innerHeight-17);
 document.body.appendChild(renderer.domElement);
 
 // Fog setup
-const farFog = Math.abs(Z_POSITION * 1.5);
-const nearFog = Math.abs(Z_POSITION / 1.5);
+const farFog = 400;
+const nearFog = 1;
 scene.fog = new THREE.Fog(0x1a000a, nearFog, farFog);
 
 // Particles
 const particleData = [];
 const particles = [];
 
+// Function to create a capsule-like shape
+function createCapsuleShape(radius, height, radialSegments, heightSegments) {
+    const geometry = new THREE.BufferGeometry();
+    const positions = [];
+    const indices = [];
 
-// create particles, add them to the scene, ad set them to invisible
-// The particles can be rendered as a box
+    // Create cylinder
+    const cylinderGeometry = new THREE.CylinderBufferGeometry(radius, radius, height, radialSegments, heightSegments, true);
+    const cylinderPositions = cylinderGeometry.getAttribute('position').array;
+    const cylinderIndices = cylinderGeometry.getIndex().array;
+
+    positions.push(...cylinderPositions);
+    indices.push(...cylinderIndices);
+
+    // Create top hemisphere
+    const topSphereGeometry = new THREE.SphereBufferGeometry(radius, radialSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2);
+    const topSpherePositions = topSphereGeometry.getAttribute('position').array;
+    const topSphereIndices = topSphereGeometry.getIndex().array;
+
+    const topOffset = positions.length / 3;
+    for (let i = 0; i < topSpherePositions.length; i += 3) {
+        positions.push(topSpherePositions[i], topSpherePositions[i + 1] + height / 2, topSpherePositions[i + 2]);
+    }
+    for (let i = 0; i < topSphereIndices.length; i++) {
+        indices.push(topSphereIndices[i] + topOffset);
+    }
+
+    // Create bottom hemisphere
+    const bottomSphereGeometry = new THREE.SphereBufferGeometry(radius, radialSegments, heightSegments, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
+    const bottomSpherePositions = bottomSphereGeometry.getAttribute('position').array;
+    const bottomSphereIndices = bottomSphereGeometry.getIndex().array;
+
+    const bottomOffset = positions.length / 3;
+    for (let i = 0; i < bottomSpherePositions.length; i += 3) {
+        positions.push(bottomSpherePositions[i], bottomSpherePositions[i + 1] - height / 2, bottomSpherePositions[i + 2]);
+    }
+    for (let i = 0; i < bottomSphereIndices.length; i++) {
+        indices.push(bottomSphereIndices[i] + bottomOffset);
+    }
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices);
+
+    return geometry;
+}
+
+// create particles, add them to the scene, and set them to invisible
 function createParticlePool(maxParticles) {
     for (let i = 0; i < maxParticles; i++) {
-        const particleMesh = new THREE.Line(particleGeometry, new THREE.LineBasicMaterial({color: 0xffffff}));
+        const capsuleGeometry = createCapsuleShape(2, 2, 10, 1);
+        const particleMesh = new THREE.Mesh(
+            capsuleGeometry,
+            new THREE.MeshBasicMaterial({color: 0xffffff})
+        );
         particleMesh.visible = false;
         scene.add(particleMesh);
         particles.push(particleMesh);
     }
 }
-// Create shared geometries
-const particleGeometry = new THREE.BoxGeometry(1, 0.001, 0);
-const sharedEdges = new THREE.EdgesGeometry(particleGeometry);
 
 createParticlePool(MAX_PARTICLES_CURRENT);
 
@@ -61,41 +106,29 @@ function updateParticles(timeStep) {
     let particleIndex = 0;
    
     currentLayer.forEach(data => {
-                if (interestingIdsSet.has(data.ID) && particleIndex < particles.length) {
-                    const particle = particles[particleIndex];
-                    const x = data.x * SCALE_FACTOR;
-                    const y = (data.y - Y_OFFSET) * SCALE_FACTOR;
-                    const z = -timeStep * Z_OFFSET - 0.5;
-                    const length = (data.length + 1) * SCALE_FACTOR;
-                    const angle = data.angle * Math.PI + HALF_PI;
-        
-                    particle.scale.set(length, 1, 1);
-                    particle.position.set(x, y, z);
-                    particle.rotation.z = angle;
-                    particle.material = materialGreen;
-                    particle.visible = true;
-                    
-                    particleIndex++;
+        if (interestingIdsSet.has(data.ID) && particleIndex < particles.length) {
+            const particle = particles[particleIndex];
+            const x = data.x * SCALE_FACTOR;
+            const y = (data.y - Y_OFFSET) * SCALE_FACTOR;
+            const z = -timeStep * Z_OFFSET - 0.5;
+            const length = (data.length + 1) * SCALE_FACTOR;
+            const angle = data.angle * Math.PI ;
+    
+            particle.scale.set(0.5, length / 3, 0.5); // Adjust scale to match the original line length
+            particle.position.set(x, y, z);
+            particle.rotation.z = angle;
+            particle.material.color.setHex(0x00ffff);
+            particle.visible = true;
+            
+            particleIndex++;
+        }
+    });
 
-                }
-                
-            });
-
-      
-  
     // Hide unused particles
     for (let i = particleIndex; i < particles.length; i++) {
         particles[i].visible = false;
     }
-
-
 }
-
-    
-
-
-
-
 
 let currentTimeStep = 0;
 let numberOfTimeSteps = null;
@@ -296,10 +329,9 @@ function animate() {
         if (Math.floor(currentTimeStep) % 10 === 0) {
             createContainer(currentTimeStep);
         }
-        updateParticles(currentTimeStep);
+        //updateParticles(currentTimeStep);
     }
 
-    //angle += ROTATION_SPEED * ANIMATION_SPEED;
     const cameraX = lookX + 120 * Math.cos(angle);
     const cameraY = lookY + 120 * Math.sin(angle);
     if (end === false && currentTimeStep > 1) {
@@ -344,7 +376,6 @@ function restart() {
 
 }
 
-
 function addParticles(timeStep) {
     const z = -timeStep * Z_OFFSET;
     const layer = particleData[Math.floor(timeStep)] || [];
@@ -353,32 +384,39 @@ function addParticles(timeStep) {
         if (interestingIdsSet.has(data.ID)) {
             const x = data.x * SCALE_FACTOR;
             const y = (data.y - Y_OFFSET) * SCALE_FACTOR;
-            const length = (data.length+1) * SCALE_FACTOR;
-            const angle = data.angle * Math.PI + HALF_PI;
+            const length = (data.length) * SCALE_FACTOR;
+            const angle = data.angle * Math.PI;
 
-            const startX = x - length * Math.cos(angle) / 2
-            const startY = y - length * Math.sin(angle) / 2;
-            const endX = x + length * Math.cos(angle) / 2;
-            const endY = y + length * Math.sin(angle) / 2;
-            const geometry = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(startX, startY, z),
-                new THREE.Vector3(endX, endY, z)
-            ]);
+            // Create capsule
+            const capsuleGeometry = createCapsuleShape(2, length, 10, 1);
+            const capsuleMaterial = new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: lineOpacity});
+            const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 
-            //Let's place a point at the start and end of the line
-             const points = [];
-                points.push(new THREE.Vector3(startX, startY, z-Z_OFFSET/2));
-                points.push(new THREE.Vector3(endX, endY, z-Z_OFFSET/2));
-                const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
+            capsule.position.set(x, y, z);
+            capsule.rotation.z = angle;
 
-                const pointsObject = new THREE.Points(geometryPoints, materialPoints);
-                scene.add(pointsObject);
-                addedPoints.push(pointsObject);
+            scene.add(capsule);
+            addedParticles.push(capsule);
 
+            // Create wireframe for capsule perimeter
+            const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
+            const wireframeMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.8,
+                linewidth: 1
+            });
+            const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
 
-            const line = new THREE.Line(geometry, material);
-            scene.add(line);
-            addedParticles.push(line); // Store the added particle
+            // Scale the wireframe slightly larger to avoid z-fighting
+            wireframe.scale.set(1.05, 1.05, 1.05);
+
+            // Set the same position and rotation as the capsule
+            wireframe.position.copy(capsule.position);
+            wireframe.rotation.copy(capsule.rotation);
+
+            scene.add(wireframe);
+            addedParticles.push(wireframe);
         }
     });
 }
@@ -397,8 +435,6 @@ function removeOldParticles() {
         oldestPoint.geometry.dispose(); // Dispose of the geometry
         oldestPoint.material.dispose(); // Dispose of the material
     }
-
-
 }
 
 function removeOldContainers() {
