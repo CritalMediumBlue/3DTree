@@ -17,7 +17,7 @@ const MAX_PARTICLES_CURRENT = 1200;
 const MAX_CONTAINERS = 20;
 let addTrace = true;
 let end = false;
-const lineOpacity = 0.4;
+const lineOpacity = 0.3;
 let cameraZ = Z_POSITION;
 let lookX = 0;
 let lookY = 0;
@@ -46,7 +46,7 @@ function createCapsuleShape(radius, height, radialSegments, heightSegments) {
     const indices = [];
 
     // Create cylinder
-    const cylinderGeometry = new THREE.CylinderBufferGeometry(radius, radius, height, radialSegments, heightSegments, true);
+    const cylinderGeometry = new THREE.CylinderBufferGeometry(radius, radius, height, radialSegments, heightSegments, false);// ()
     const cylinderPositions = cylinderGeometry.getAttribute('position').array;
     const cylinderIndices = cylinderGeometry.getIndex().array;
 
@@ -54,7 +54,7 @@ function createCapsuleShape(radius, height, radialSegments, heightSegments) {
     indices.push(...cylinderIndices);
 
     // Create top hemisphere
-    const topSphereGeometry = new THREE.SphereBufferGeometry(radius, radialSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2);
+    const topSphereGeometry = new THREE.SphereBufferGeometry(radius, radialSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2); // Create a hemisphere
     const topSpherePositions = topSphereGeometry.getAttribute('position').array;
     const topSphereIndices = topSphereGeometry.getIndex().array;
 
@@ -80,61 +80,16 @@ function createCapsuleShape(radius, height, radialSegments, heightSegments) {
     }
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setIndex(indices);
-
+    geometry.setIndex(indices); // Indices 
+ 
     return geometry;
-}
-
-// create particles, add them to the scene, and set them to invisible
-function createParticlePool(maxParticles) {
-    for (let i = 0; i < maxParticles; i++) {
-        const capsuleGeometry = createCapsuleShape(2, 2, 10, 1);
-        const particleMesh = new THREE.Mesh(
-            capsuleGeometry,
-            new THREE.MeshBasicMaterial({color: 0xffffff})
-        );
-        particleMesh.visible = false;
-        scene.add(particleMesh);
-        particles.push(particleMesh);
-    }
-}
-
-createParticlePool(MAX_PARTICLES_CURRENT);
-
-function updateParticles(timeStep) {
-    const currentLayer = particleData[Math.floor(timeStep)] || [];
-    let particleIndex = 0;
-   
-    currentLayer.forEach(data => {
-        if (interestingIdsSet.has(data.ID) && particleIndex < particles.length) {
-            const particle = particles[particleIndex];
-            const x = data.x * SCALE_FACTOR;
-            const y = (data.y - Y_OFFSET) * SCALE_FACTOR;
-            const z = -timeStep * Z_OFFSET - 0.5;
-            const length = (data.length + 1) * SCALE_FACTOR;
-            const angle = data.angle * Math.PI ;
-    
-            particle.scale.set(0.5, length / 3, 0.5); // Adjust scale to match the original line length
-            particle.position.set(x, y, z);
-            particle.rotation.z = angle;
-            particle.material.color.setHex(0x00ffff);
-            particle.visible = true;
-            
-            particleIndex++;
-        }
-    });
-
-    // Hide unused particles
-    for (let i = particleIndex; i < particles.length; i++) {
-        particles[i].visible = false;
-    }
 }
 
 let currentTimeStep = 0;
 let numberOfTimeSteps = null;
 const addedParticles = []; // Array to store added particles
-const addedPoints = []; // Array to store added points
 const addedContainers = []; // Array to store added container
+const addedWireframes = []; // Array to store added wireframes
 
 // Create container
 let container;
@@ -157,25 +112,8 @@ const staticContainerLine = new THREE.LineSegments(staticContainerEdges, new THR
 staticContainerLine.position.z = 0;
 scene.add(staticContainerLine);
 
-const material = new THREE.LineBasicMaterial({ 
-    color: 0xffffff, 
-    transparent: true, 
-    opacity: lineOpacity,
-    linewidth: 4, // Increased line width (note: this may not be supported in all WebGL renderers)
-});
 
-const materialGreen = new THREE.LineBasicMaterial({ 
-    color: 0x00ffff, 
-    transparent: true, 
-    opacity: lineOpacity,
-    linewidth: 10// Increased line width (note: this may not be supported in all WebGL renderers)
-});
-const materialPoints = new THREE.PointsMaterial({color: 0xff00ff, 
-    size: 1.5,
-    sizeAttenuation: true,
-    transparent: true,
-    opacity: lineOpacity
-});
+
 let angle = 0;
 
 // File input handler
@@ -319,6 +257,7 @@ function animate() {
 
         if(addedParticles.length > MAX_PARTICLES) {
             removeOldParticles(); // Remove old particles before adding new ones
+
         }
         if(addedContainers.length > MAX_CONTAINERS) {
             removeOldContainers(); // Remove old containers before adding new ones
@@ -329,7 +268,6 @@ function animate() {
         if (Math.floor(currentTimeStep) % 10 === 0) {
             createContainer(currentTimeStep);
         }
-        //updateParticles(currentTimeStep);
     }
 
     const cameraX = lookX + 120 * Math.cos(angle);
@@ -358,18 +296,20 @@ function restart() {
         particle.material.dispose();
     });
     addedParticles.length = 0;
-    addedPoints.forEach(point => {
-        scene.remove(point);
-        point.geometry.dispose();
-        point.material.dispose();
-    });
-    addedPoints.length = 0;
+
     addedContainers.forEach(container => {
         scene.remove(container);
         container.geometry.dispose();
         container.material.dispose();
     });
     addedContainers.length = 0;
+
+    addedWireframes.forEach(wireframe => {
+        scene.remove(wireframe);
+        wireframe.geometry.dispose();
+        wireframe.material.dispose();
+    });
+    addedWireframes.length = 0;
 
     createContainer(currentTimeStep);
     cameraZ = Z_POSITION;
@@ -389,7 +329,7 @@ function addParticles(timeStep) {
 
             // Create capsule
             const capsuleGeometry = createCapsuleShape(2, length, 10, 1);
-            const capsuleMaterial = new THREE.MeshBasicMaterial({color: 0x00ffff, transparent: true, opacity: lineOpacity});
+            const capsuleMaterial = new THREE.MeshBasicMaterial({color: 0x00C8FF, transparent: true, opacity: lineOpacity});
             const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 
             capsule.position.set(x, y, z);
@@ -403,20 +343,20 @@ function addParticles(timeStep) {
             const wireframeMaterial = new THREE.LineBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.8,
+                opacity: 0.5,
                 linewidth: 1
             });
             const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
 
             // Scale the wireframe slightly larger to avoid z-fighting
-            wireframe.scale.set(1.05, 1.05, 1.05);
+            wireframe.scale.set(1.005, 1.005, 1.005);
 
             // Set the same position and rotation as the capsule
             wireframe.position.copy(capsule.position);
             wireframe.rotation.copy(capsule.rotation);
 
             scene.add(wireframe);
-            addedParticles.push(wireframe);
+            addedWireframes.push(wireframe);
         }
     });
 }
@@ -429,12 +369,13 @@ function removeOldParticles() {
         oldestParticle.material.dispose(); // Dispose of the material
     }
 
-    while (addedPoints.length > MAX_PARTICLES) {
-        const oldestPoint = addedPoints.shift(); // Remove the oldest point from the array
-        scene.remove(oldestPoint); // Remove the point from the scene
-        oldestPoint.geometry.dispose(); // Dispose of the geometry
-        oldestPoint.material.dispose(); // Dispose of the material
+    while (addedWireframes.length > MAX_PARTICLES) {
+        const oldestWireframe = addedWireframes.shift(); // Remove the oldest wireframe from the array
+        scene.remove(oldestWireframe); // Remove the wireframe from the scene
+        oldestWireframe.geometry.dispose(); // Dispose of the geometry
+        oldestWireframe.material.dispose(); // Dispose of the material
     }
+
 }
 
 function removeOldContainers() {
