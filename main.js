@@ -1,16 +1,15 @@
 // Constants
-const FOV = 75;  // Field of view
 const NEAR_PLANE = 10;
 const FAR_PLANE = 2000;
-const Z_POSITION = -150;
-const Z_OFFSET = 5;
+const Z_INITIAL = -150;
+const Z_STEP = 5;
 const ROTATION_SPEED = 0.05;
 const ANIMATION_SPEED = 0.99;
 const CONTAINER_SIZE = { width: 400, height: 240 };
 const SCALE_FACTOR = 4;
 const Y_OFFSET = 170;
 const HALF_PI = Math.PI / 2;
-const MAX_PARTICLES = 5000; // Maximum number of particles to keep in the scene
+const MAX_PARTICLES = 1000; // Maximum number of particles to keep in the scene
 const allIds = [];
 let interestingIdsSet; // Changed to a Set for faster lookups
 const MAX_PARTICLES_CURRENT = 1200;
@@ -18,14 +17,14 @@ const MAX_CONTAINERS = 20;
 let addTrace = true;
 let end = false;
 const lineOpacity = 0.3;
-let cameraZ = Z_POSITION;
+let cameraZ = Z_INITIAL;
 let lookX = 0;
 let lookY = 0;
 
 
 // Three.js setup
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(FOV, window.innerWidth / window.innerHeight, NEAR_PLANE, FAR_PLANE);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, NEAR_PLANE, FAR_PLANE);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth-17, window.innerHeight-17);
 document.body.appendChild(renderer.domElement);
@@ -99,7 +98,7 @@ function createContainer(timeStep) {
     const containerGeometry = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, thickness);
     const containerEdges = new THREE.EdgesGeometry(containerGeometry);
     container = new THREE.LineSegments(containerEdges, new THREE.LineBasicMaterial({color: 0xffffff}));
-    container.position.z = -(Z_OFFSET * timeStep) ;
+    container.position.z = -(Z_STEP * timeStep) ;
     scene.add(container);
     addedContainers.push(container);
 }
@@ -183,10 +182,10 @@ document.addEventListener('keydown', (event) => {
         addTrace = !addTrace;
     }
     else if (event.key === 'ArrowUp') {
-        cameraZ -= Z_OFFSET*2;
+        cameraZ -= 4;
     }
     else if (event.key === 'ArrowDown') {
-        cameraZ += Z_OFFSET*2;
+        cameraZ += 4;
     }
     else if (event.key === 'ArrowLeft') {
         angle -= ROTATION_SPEED/2;
@@ -273,18 +272,18 @@ function animate() {
     const cameraX = lookX + 120 * Math.cos(angle);
     const cameraY = lookY + 120 * Math.sin(angle);
     if (end === false && currentTimeStep > 1) {
-        cameraZ -=  Z_OFFSET;
+        cameraZ -=  Z_STEP;
         camera.position.set(cameraX, cameraY, cameraZ);
-        camera.lookAt(lookX, lookY, -Z_OFFSET * currentTimeStep);   
+        camera.lookAt(lookX, lookY, -Z_STEP * currentTimeStep);   
     } else if (end === true) {
         camera.position.set(cameraX, cameraY, cameraZ);
-        camera.lookAt(lookX, lookY, cameraZ - Z_POSITION);   
+        camera.lookAt(lookX, lookY, cameraZ - Z_INITIAL);   
 
     } else if (end === false && currentTimeStep <= 1) {
         camera.position.set(cameraX, cameraY, cameraZ);
-        camera.lookAt(lookX, lookY, -Z_OFFSET * currentTimeStep);    
+        camera.lookAt(lookX, lookY, -Z_STEP * currentTimeStep);    
     }
-    staticContainerLine.position.z = -Z_OFFSET * currentTimeStep;
+    staticContainerLine.position.z = -Z_STEP * currentTimeStep;
     renderer.render(scene, camera);
 }
 
@@ -312,12 +311,12 @@ function restart() {
     addedWireframes.length = 0;
 
     createContainer(currentTimeStep);
-    cameraZ = Z_POSITION;
+    cameraZ = Z_INITIAL;
 
 }
 
 function addParticles(timeStep) {
-    const z = -timeStep * Z_OFFSET;
+    const z = -timeStep * Z_STEP;
     const layer = particleData[Math.floor(timeStep)] || [];
 
     layer.forEach(data => {
