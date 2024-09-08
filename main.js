@@ -1,22 +1,16 @@
-// Constants
-const NEAR_PLANE = 10;
-const FAR_PLANE = 2000;
-const Z_INITIAL = -150;
-const Z_STEP = 5;
+
+const Z_INITIAL = 150;
+const Z_STEP = 6;
 const ROTATION_SPEED = 0.05;
 const ANIMATION_SPEED = 0.99;
 const CONTAINER_SIZE = { width: 400, height: 240 };
 const SCALE_FACTOR = 4;
-const Y_OFFSET = 170;
-const HALF_PI = Math.PI / 2;
 const MAX_PARTICLES = 1000; // Maximum number of particles to keep in the scene
 const allIds = [];
 let interestingIdsSet; // Changed to a Set for faster lookups
-const MAX_PARTICLES_CURRENT = 1200;
-const MAX_CONTAINERS = 20;
+const MAX_CONTAINERS = 5;
 let addTrace = true;
 let end = false;
-const lineOpacity = 0.3;
 let cameraZ = Z_INITIAL;
 let lookX = 0;
 let lookY = 0;
@@ -24,35 +18,34 @@ let lookY = 0;
 
 // Three.js setup
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, NEAR_PLANE, FAR_PLANE);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 10, 2000);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth-17, window.innerHeight-17);
 document.body.appendChild(renderer.domElement);
 
+
 // Fog setup
-const farFog = 400;
+const farFog = 300;
 const nearFog = 1;
-scene.fog = new THREE.Fog(0x1a000a, nearFog, farFog);
+scene.fog = new THREE.Fog(0x1a0000, nearFog, farFog);
 
 // Particles
 const particleData = [];
-const particles = [];
-
 // Function to create a capsule-like shape
 function createCapsuleShape(radius, height, radialSegments, heightSegments) {
     const geometry = new THREE.BufferGeometry();
     const positions = [];
     const indices = [];
 
-    // Create cylinder
-    const cylinderGeometry = new THREE.CylinderBufferGeometry(radius, radius, height, radialSegments, heightSegments, false);// ()
+    // Create cylinder without caps
+    const cylinderGeometry = new THREE.CylinderBufferGeometry(radius, radius, height, radialSegments, heightSegments, true); // true = no caps
     const cylinderPositions = cylinderGeometry.getAttribute('position').array;
     const cylinderIndices = cylinderGeometry.getIndex().array;
 
     positions.push(...cylinderPositions);
     indices.push(...cylinderIndices);
 
-    // Create top hemisphere
+    // Create top hemisphere without caps
     const topSphereGeometry = new THREE.SphereBufferGeometry(radius, radialSegments, heightSegments, 0, Math.PI * 2, 0, Math.PI / 2); // Create a hemisphere
     const topSpherePositions = topSphereGeometry.getAttribute('position').array;
     const topSphereIndices = topSphereGeometry.getIndex().array;
@@ -65,7 +58,7 @@ function createCapsuleShape(radius, height, radialSegments, heightSegments) {
         indices.push(topSphereIndices[i] + topOffset);
     }
 
-    // Create bottom hemisphere
+    // Create bottom hemisphere without caps
     const bottomSphereGeometry = new THREE.SphereBufferGeometry(radius, radialSegments, heightSegments, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2);
     const bottomSpherePositions = bottomSphereGeometry.getAttribute('position').array;
     const bottomSphereIndices = bottomSphereGeometry.getIndex().array;
@@ -92,13 +85,14 @@ const addedWireframes = []; // Array to store added wireframes
 
 // Create container
 let container;
-const thickness =  10;
+const thickness =  20;
 
 function createContainer(timeStep) {
     const containerGeometry = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, thickness);
     const containerEdges = new THREE.EdgesGeometry(containerGeometry);
-    container = new THREE.LineSegments(containerEdges, new THREE.LineBasicMaterial({color: 0xffffff}));
-    container.position.z = -(Z_STEP * timeStep) ;
+    container = new THREE.LineSegments(containerEdges, new THREE.LineBasicMaterial({color: 0xffffff, 
+        linewidth: 2}));
+    container.position.z = (Z_STEP * timeStep) ;
     scene.add(container);
     addedContainers.push(container);
 }
@@ -107,11 +101,10 @@ createContainer(currentTimeStep);
 
 const staticContainer = new THREE.BoxGeometry(CONTAINER_SIZE.width, CONTAINER_SIZE.height, thickness);
 const staticContainerEdges = new THREE.EdgesGeometry(staticContainer);
-const staticContainerLine = new THREE.LineSegments(staticContainerEdges, new THREE.LineBasicMaterial({color: 0xffffff}));
+const staticContainerLine = new THREE.LineSegments(staticContainerEdges, new THREE.LineBasicMaterial({color: 0xffffff,
+    linewidth: 2}));
 staticContainerLine.position.z = 0;
 scene.add(staticContainerLine);
-
-
 
 let angle = 0;
 
@@ -200,20 +193,15 @@ document.addEventListener('keydown', (event) => {
     }
     else if (event.key === 'e') {
         end = !end;
-        currentTimeStep = numberOfTimeSteps;
-
     } else if (event.key === 'w') {
-        lookY += 1;
+        lookY += 2;
     } else if (event.key === 's') {
-        lookY -= 1;
+        lookY -= 2;
     } else if (event.key === 'd') {
-        lookX -= 1;
+        lookX -= 2;
     } else if (event.key === 'a') {
-        lookX += 1;
+        lookX += 2;
     } 
-
-    
-    
     
 });
 
@@ -256,7 +244,6 @@ function animate() {
 
         if(addedParticles.length > MAX_PARTICLES) {
             removeOldParticles(); // Remove old particles before adding new ones
-
         }
         if(addedContainers.length > MAX_CONTAINERS) {
             removeOldContainers(); // Remove old containers before adding new ones
@@ -264,31 +251,24 @@ function animate() {
         if (addTrace) {
         addParticles(currentTimeStep);
         }
-        if (Math.floor(currentTimeStep) % 10 === 0) {
+        if (Math.floor(currentTimeStep) % 15 === 0) {
             createContainer(currentTimeStep);
         }
     }
 
     const cameraX = lookX + 120 * Math.cos(angle);
     const cameraY = lookY + 120 * Math.sin(angle);
+    camera.position.set(cameraX, cameraY, cameraZ);
+    camera.lookAt(lookX, lookY, Z_STEP * currentTimeStep);
     if (end === false && currentTimeStep > 1) {
-        cameraZ -=  Z_STEP;
-        camera.position.set(cameraX, cameraY, cameraZ);
-        camera.lookAt(lookX, lookY, -Z_STEP * currentTimeStep);   
-    } else if (end === true) {
-        camera.position.set(cameraX, cameraY, cameraZ);
-        camera.lookAt(lookX, lookY, cameraZ - Z_INITIAL);   
-
-    } else if (end === false && currentTimeStep <= 1) {
-        camera.position.set(cameraX, cameraY, cameraZ);
-        camera.lookAt(lookX, lookY, -Z_STEP * currentTimeStep);    
-    }
-    staticContainerLine.position.z = -Z_STEP * currentTimeStep;
+        cameraZ +=  Z_STEP;
+    } 
+    staticContainerLine.position.z = Z_STEP * currentTimeStep;
     renderer.render(scene, camera);
 }
 
 function restart() {
-    currentTimeStep = 1;
+    currentTimeStep = 0;
     addedParticles.forEach(particle => {
         scene.remove(particle);
         particle.geometry.dispose();
@@ -316,19 +296,20 @@ function restart() {
 }
 
 function addParticles(timeStep) {
-    const z = -timeStep * Z_STEP;
+    const z = timeStep * Z_STEP;
     const layer = particleData[Math.floor(timeStep)] || [];
 
     layer.forEach(data => {
         if (interestingIdsSet.has(data.ID)) {
             const x = data.x * SCALE_FACTOR;
-            const y = (data.y - Y_OFFSET) * SCALE_FACTOR;
+            const y = (data.y - 170) * SCALE_FACTOR;
             const length = (data.length) * SCALE_FACTOR;
             const angle = data.angle * Math.PI;
+            const radius = 0.5 * SCALE_FACTOR;
 
             // Create capsule
-            const capsuleGeometry = createCapsuleShape(2, length, 10, 1);
-            const capsuleMaterial = new THREE.MeshBasicMaterial({color: 0x00C8FF, transparent: true, opacity: lineOpacity});
+            const capsuleGeometry = createCapsuleShape(radius, length, 8, 3);
+            const capsuleMaterial = new THREE.MeshBasicMaterial({color: 0x0082c6});
             const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 
             capsule.position.set(x, y, z);
@@ -341,9 +322,7 @@ function addParticles(timeStep) {
             const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
             const wireframeMaterial = new THREE.LineBasicMaterial({
                 color: 0xffffff,
-                transparent: true,
-                opacity: 0.5,
-                linewidth: 1
+                linewidth: 1.5
             });
             const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
 
