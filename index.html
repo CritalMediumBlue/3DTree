@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Graph Plotting with THREE.js</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <style>
         .button-container {
             position: fixed;
@@ -31,6 +31,14 @@
             margin-bottom: 5px;
         }
     </style>
+        <script type="importmap">
+            {
+              "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/"
+              }
+            }
+          </script>
 </head>
 <body>
     <div class="button-container">
@@ -41,6 +49,6 @@
         <button id="button4">Right</button>
         <button id="button5">Top-Right</button>
     </div>
-    <script src="main.js"></script>
+    <script type = "module" src ="main.js"></script>
 </body>
 </html>
