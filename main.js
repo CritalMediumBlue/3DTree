@@ -15,7 +15,8 @@ const {
     CAMERA_MOVE_STEP = 4,
     LOOK_MOVE_STEP = 2,
     CONTAINER_INTERVAL = 15,
-    ID_THRESHOLD = 2000
+    ID_THRESHOLD = 2000,
+    COLOR_DELTA = 20
 } = {}; 
 
 // State variables
@@ -135,16 +136,23 @@ function colorInheritanceSimulation() {
 
 function computeColor(id, parentColor) {
     if (colorMemo.has(id)) return colorMemo.get(id);
+
+    const deltaRed = Math.floor(Math.random() * COLOR_DELTA * 2 - COLOR_DELTA); 
+    const deltaGreen = Math.floor(Math.random() * COLOR_DELTA * 2 - COLOR_DELTA);
+    const deltaBlue = Math.floor(Math.random() * COLOR_DELTA * 2 - COLOR_DELTA);
     
     const color = id > ID_THRESHOLD
-        ? ((parentColor === 'invisible' || parentColor === 'green') ? parentColor : 'invisible')
-        : (Math.random() < 0.1 ? 'green' : 'invisible');
+        ? (parentColor === 'invisible') ? 'invisible' :
+        [
+            Math.abs((parentColor[0] + deltaRed) % 256), 
+            Math.abs((parentColor[1] + deltaGreen) % 256), 
+            Math.abs((parentColor[2] + deltaBlue) % 256)
+        ]
+        : (Math.random() < 0.1 ? [100, 200, 200] : 'invisible');
     
     colorMemo.set(id, color);
     return color;
 }
-
-const GREEN_COLOR = 0x00ffff;
 const BLACK_COLOR = 0x000000;
 
 const addParticles = (timeStep) => {
@@ -162,7 +170,7 @@ const addParticles = (timeStep) => {
         const radius = SCALE_FACTOR / 2;
 
         const capsuleGeometry = new THREE.CapsuleGeometry( radius, adjustedLength, 1, 3);
-        const capsuleMaterial = new THREE.MeshBasicMaterial({ color: GREEN_COLOR });
+        const capsuleMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(`rgb(${data.color[0]}, ${data.color[1]}, ${data.color[2]})`) });
         const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 
         capsule.position.set(adjustedX, adjustedY, z);
