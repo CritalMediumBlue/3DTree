@@ -3,12 +3,12 @@ import * as THREE from 'three';
 // Constants
 const {
     Z_INITIAL = 150,
-    Z_STEP = 4,
+    Z_STEP = 2,
     ROTATION_SPEED = 0.05,
     ANIMATION_SPEED = 1,
     CONTAINER_SIZE = { width: 400, height: 240 },
     SCALE_FACTOR = 4,
-    MAX_PARTICLES = 5000,
+    MAX_PARTICLES = 6000,
     MAX_CONTAINERS = 4,
     FOG_FAR = 300,
     FOG_NEAR = 1,
@@ -169,7 +169,6 @@ function computeColor(id, parentColor) {
     return color;
 }
 
-const BLACK_COLOR = 0x000000;
 
 const addParticles = (timeStep) => {
     const z = timeStep * Z_STEP;
@@ -196,7 +195,7 @@ const addParticles = (timeStep) => {
         addedParticles.push(capsule);
 
         const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({ color: BLACK_COLOR, linewidth: 2 });
+        const wireframeMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
         const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
         wireframe.position.copy(capsule.position);
         wireframe.rotation.copy(capsule.rotation);
