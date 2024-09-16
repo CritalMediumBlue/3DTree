@@ -50,12 +50,11 @@ function computeColor(id, parentColor) {
 }
 
 export function addParticles(scene, timeStep, particleData) {
-    const z = timeStep * CONFIG.Z_STEP;
+    const z = 0;
     const layer = particleData.get(Math.floor(timeStep)) || [];
     const addedObjects = [];
 
     layer.forEach(data => {
-        if (data.color === 'invisible') return;
 
         const { x, y, length, angle } = data;
         const adjustedX = x * CONFIG.SCALE_FACTOR;
@@ -65,7 +64,7 @@ export function addParticles(scene, timeStep, particleData) {
         const radius = CONFIG.SCALE_FACTOR / 2;
 
         const capsuleGeometry = new THREE.CapsuleGeometry(radius, adjustedLength, CONFIG.CAP_SEGMENTS, CONFIG.RADIAL_SEGMENTS);
-        const capsuleMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(`rgb(${data.color[0]}, ${data.color[1]}, ${data.color[2]})`) });
+        const capsuleMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(`rgb(255, 255, 255)`)});
         const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 
         capsule.position.set(adjustedX, adjustedY, z);
@@ -75,7 +74,7 @@ export function addParticles(scene, timeStep, particleData) {
         addedObjects.push(capsule);
 
         const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(`rgb(${Math.floor(data.color[0] * 0.5)}, ${Math.floor(data.color[1] * 0.5)}, ${Math.floor(data.color[2] * 0.5)})`) , linewidth: 2 });
+        const wireframeMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(`rgb(0, 0, 0)`) });
         const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
         wireframe.position.copy(capsule.position);
         wireframe.rotation.copy(capsule.rotation);
