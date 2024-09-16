@@ -4,47 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Graph Plotting with THREE.js</title>
-
-    <style>
-        .button-container {
-            position: fixed;
-            left: 10px;
-            top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
+    <link rel="stylesheet" href="styles.css">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/",
+            "d3": "https://cdn.jsdelivr.net/npm/d3@7.8.2/+esm"
+          }
         }
-        .button-container button {
-            padding: 3px 3px;
-            font-size: 12px;
-            cursor: pointer;
-            width: 80px;
-            background-color: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(0, 0, 0, 0.3);
-            transition: background-color 0.3s ease;
-        }
-        .button-container button:hover {
-            background-color: rgba(255, 255, 255, 0.9);
-        }
-        #fileInput {
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-    </style>
-        <script type="importmap">
-            {
-              "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/"
-              }
-            }
-          </script>
+    </script>
 </head>
 <body>
     <div class="button-container">
         <input type="file" id="fileInput" />
-        
+        <button id="plotButton">Plot</button>
     </div>
-    <script type = "module" src ="main.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>
