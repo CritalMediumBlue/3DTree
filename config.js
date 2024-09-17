@@ -1,6 +1,10 @@
 export const CONFIG = {
-    SCALE_FACTOR: 2, // Factor by which to scale objects
-    CAP_SEGMENTS: 2, // Number of segments for caps
-    RADIAL_SEGMENTS: 7, // Number of radial segments
-    MAX_PARTICLES: 1500 // Maximum number of predefined particles
+    SCALE_FACTOR: 2,
+    CAP_SEGMENTS: 2,
+    RADIAL_SEGMENTS: 10,
+    MAX_PARTICLES: 1500,
+    OFFSET_Y: 170,
+    WIREFRAME_SCALE: 1.005,
+    CAPSULE_COLOR: 'rgb(100, 100, 255)',
+    WIREFRAME_COLOR: 'rgb(0, 0, 0)'
 };

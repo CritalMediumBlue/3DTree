@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { CONFIG } from './config.js';
 
 /**
  * Sets up the scene, camera, renderer, and controls.
@@ -61,15 +62,14 @@ function createRenderer() {
  * Creates and returns a new OrbitControls object.
  * @param {THREE.Camera} camera - The camera to control.
  * @param {THREE.WebGLRenderer} renderer - The renderer to control.
- * @param {Object} options - Options for the controls.
  * @returns {OrbitControls} The created controls.
  */
-function createControls(camera, renderer, { enableDamping = false, autoRotate = false, screenSpacePanning = false, maxDistance = 1000, minDistance = 100 } = {}) {
+function createControls(camera, renderer) {
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = enableDamping;
-    controls.autoRotate = autoRotate;
-    controls.screenSpacePanning = screenSpacePanning;
-    controls.maxDistance = maxDistance;
-    controls.minDistance = minDistance;
+    controls.enableDamping = false;
+    controls.autoRotate = false;
+    controls.screenSpacePanning = false;
+    controls.maxDistance = 1000;
+    controls.minDistance = 100;
     return controls;
 }
