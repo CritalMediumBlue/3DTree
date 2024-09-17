@@ -1,16 +1,23 @@
 import { setupScene } from './sceneSetup.js';
-import { colorInheritanceSimulation, addParticles } from './particleSystem.js';
+import { initializeParticles, updateParticles } from './particleSystem.js';
+import { CONFIG } from './config.js';
 
 // State variables
 let currentTimeStep = 0;
-let numberOfTimeSteps = null;
-
+ 
 // Three.js setup
-let { scene, camera, renderer, controls } = setupScene();
+const { scene, camera, renderer, controls } = setupScene();
+
+// Add renderer to DOM
+document.body.appendChild(renderer.domElement);
 
 // Data storage
 const particleData = new Map();
-const particles = [];
+
+// Initialize particles
+initializeParticles(scene, CONFIG.MAX_PARTICLES);
+
+let numberOfTimeSteps = 0;
 
 // Event listener for file input
 document.getElementById('fileInput').addEventListener('change', (event) => {
@@ -24,43 +31,32 @@ document.getElementById('fileInput').addEventListener('change', (event) => {
             particleData.set(parseInt(key, 10), value.map(item => ({...item, ID: parseInt(item.ID, 10)})));
         });
         
-        numberOfTimeSteps = particleData.size;
-        colorInheritanceSimulation(particleData);
         currentTimeStep = 0;
-        
-        // Clear existing particles
-        particles.forEach(particle => {
-            scene.remove(particle);
-            particle.geometry.dispose();
-            particle.material.dispose();
-        });
-        particles.length = 0;
+        numberOfTimeSteps = particleData.size; 
 
-        // Set initial camera position
-        camera.position.set(0, 0, 1000);
         controls.update();
-    };
+
+        console.log('Data loaded:', particleData);
+        console.log('Number of time steps:', numberOfTimeSteps);
+    }; 
+
     reader.readAsText(file);
 });
 
-const animate = () => {
-    requestAnimationFrame(animate);
-
+const updateScene = () => {
     if (particleData.size > 0) {
-        // Remove particles from previous timestep
-        particles.forEach(particle => scene.remove(particle));
-        particles.length = 0;
-
-        // Add new particles for current timestep
-        const newParticles = addParticles(scene, currentTimeStep, particleData);
-        particles.push(...newParticles);
-
+        updateParticles(currentTimeStep, particleData);
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
     }
-    
     controls.update();
     renderer.render(scene, camera);
 };
 
-// Initialize
+const animate = () => {
+    requestAnimationFrame(animate);
+    updateScene();
+};
+
 animate();
+
+console.log('Initial setup complete. Please load a JSON file to see particles.');

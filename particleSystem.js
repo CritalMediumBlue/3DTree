@@ -1,88 +1,100 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
 
-const colorMemo = new Map();
+let predefinedParticles = []; // Array to store many predefined particles. For performance reasons, we will reuse these particles instead of creating new ones.
+const capsuleGeometryCache = new Map(); // Persistent cache for capsule geometries
+const edgesGeometryCache = new Map(); // Persistent cache for edges geometries
 
-export function colorInheritanceSimulation(particleData) {
-    const numberOfTimeSteps = particleData.size;
-    for (let timeStep = 1; timeStep < numberOfTimeSteps; timeStep++) {
-        const lastFrameParticles = particleData.get(timeStep - 1) || [];
-        const currentFrameParticles = particleData.get(timeStep);
+function createCapsule() {
+    const capsuleGeometry = new THREE.CapsuleGeometry(
+        CONFIG.SCALE_FACTOR / 2,
+        1,
+        CONFIG.CAP_SEGMENTS,
+        CONFIG.RADIAL_SEGMENTS
+    );
+    const capsuleMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(`rgb(100, 100, 255)`)});
+    return new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+}
 
-        for (let particle of currentFrameParticles) {
-            const parentID = Math.floor(particle.ID / 2);
-            const parent = lastFrameParticles.find(p => p.ID === parentID);
-            particle.color = computeColor(particle.ID, parent ? parent.color : null);
-        }
+function createWireframe(capsuleGeometry) {
+    const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
+    const wireframeMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(`rgb(0, 0, 0)`) });
+    return new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+}
+
+export function initializeParticles(scene, maxParticles) {
+    console.log('initializeParticles CONFIG:', CONFIG);
+    for (let i = 0; i < maxParticles; i++) {
+        const capsule = createAndAddCapsule(scene);
+        predefinedParticles.push(capsule);
     }
 }
 
-function computeColor(id, parentColor) {
-    if (colorMemo.has(id)) return colorMemo.get(id);
+function createAndAddCapsule(scene) {
+    const capsule = createCapsule();
+    const wireframe = createWireframe(capsule.geometry);
 
-    const deltaRed = Math.floor(Math.random() * CONFIG.COLOR_DELTA * 2 - CONFIG.COLOR_DELTA);
-    const deltaGreen = Math.floor(Math.random() * CONFIG.COLOR_DELTA * 2 - CONFIG.COLOR_DELTA);
-    const deltaBlue = Math.floor(Math.random() * CONFIG.COLOR_DELTA * 2 - CONFIG.COLOR_DELTA);
-    
-    let color;
-    if (id > CONFIG.ID_THRESHOLD) {
-        if (parentColor === 'invisible') {
-            color = 'invisible';
-        } else if (parentColor === null) {
-            color = [
-                Math.floor(Math.random() * 256),
-                Math.floor(Math.random() * 256),
-                Math.floor(Math.random() * 256)
-            ];
-        } else {
-            color = [
-                Math.abs((parentColor[0] + deltaRed) % 256), 
-                Math.abs((parentColor[1] + deltaGreen) % 256), 
-                Math.abs((parentColor[2] + deltaBlue) % 256)
-            ];
-        }
-    } else {
-        color = (Math.random() < 0.1 ? [127, 127, 127] : 'invisible');
-    }
-    
-    colorMemo.set(id, color);
-    return color;
+    capsule.add(wireframe);
+    scene.add(capsule);
+    capsule.visible = false;
+    return capsule;
 }
 
-export function addParticles(scene, timeStep, particleData) {
+function updateGeometry(particle, adjustedLength) {
+    let newGeometry = capsuleGeometryCache.get(adjustedLength);
+    if (!newGeometry) {
+        newGeometry = new THREE.CapsuleGeometry(CONFIG.SCALE_FACTOR / 2, adjustedLength, CONFIG.CAP_SEGMENTS, CONFIG.RADIAL_SEGMENTS);
+        capsuleGeometryCache.set(adjustedLength, newGeometry);
+        console.log('New particle geometry created', adjustedLength);
+    } 
+
+    if (particle.geometry !== newGeometry) {
+        particle.geometry.dispose();
+        particle.geometry = newGeometry;
+    }
+
+    let newWireframeGeometry = edgesGeometryCache.get(adjustedLength);
+    if (!newWireframeGeometry) {
+        newWireframeGeometry = new THREE.EdgesGeometry(newGeometry);
+        edgesGeometryCache.set(adjustedLength, newWireframeGeometry);
+        console.log('New wireframe geometry created', adjustedLength);
+    } 
+    const wireframe = particle.children[0]; 
+    if (wireframe.geometry !== newWireframeGeometry) {
+        wireframe.geometry.dispose();
+        wireframe.geometry = newWireframeGeometry;
+        wireframe.scale.set(1.005, 1.005, 1.005);
+    } 
+}
+
+const OFFSET_Y = 170;
+
+export function updateParticles(timeStep, particleData) {
     const z = 0;
-    const layer = particleData.get(Math.floor(timeStep)) || [];
-    const addedObjects = [];
+    const layer = particleData.get(timeStep) || [];
 
-    layer.forEach(data => {
+    predefinedParticles.forEach(particle => particle.visible = false);
 
-        const { x, y, length, angle } = data;
-        const adjustedX = x * CONFIG.SCALE_FACTOR;
-        const adjustedY = (y - 170) * CONFIG.SCALE_FACTOR;
-        const adjustedLength = length * CONFIG.SCALE_FACTOR;
-        const adjustedAngle = angle * Math.PI;
-        const radius = CONFIG.SCALE_FACTOR / 2;
+    layer.forEach((data, index) => {
+        if (index >= predefinedParticles.length) return;
 
-        const capsuleGeometry = new THREE.CapsuleGeometry(radius, adjustedLength, CONFIG.CAP_SEGMENTS, CONFIG.RADIAL_SEGMENTS);
-        const capsuleMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(`rgb(255, 255, 255)`)});
-        const capsule = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-
-        capsule.position.set(adjustedX, adjustedY, z);
-        capsule.rotation.z = adjustedAngle;
-
-        scene.add(capsule);
-        addedObjects.push(capsule);
-
-        const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(`rgb(0, 0, 0)`) });
-        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        wireframe.position.copy(capsule.position);
-        wireframe.rotation.copy(capsule.rotation);
-        wireframe.scale.multiplyScalar(1.005);
-
-        scene.add(wireframe);
-        addedObjects.push(wireframe);
+        const particle = predefinedParticles[index];
+        updateParticle(particle, data, z);
     });
-
-    return addedObjects;
 }
+
+function updateParticle(particle, data, z) {
+    const { x, y, length, angle } = data;
+    const adjustedX = x * CONFIG.SCALE_FACTOR;
+    const adjustedY = (y - OFFSET_Y) * CONFIG.SCALE_FACTOR;
+    const adjustedLength = Math.round(length * CONFIG.SCALE_FACTOR);
+    const adjustedAngle = angle * Math.PI;
+
+    particle.position.set(adjustedX, adjustedY, z);
+    particle.rotation.z = adjustedAngle;
+
+    updateGeometry(particle, adjustedLength);
+    particle.visible = true;
+}
+
+

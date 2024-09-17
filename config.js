@@ -1,9 +1,6 @@
 export const CONFIG = {
-    Z_STEP: 5,
-    SCALE_FACTOR: 2,
-    COLOR_DELTA: 20,
-    ANIMATION_SPEED: 1,
-    PARTICLE_SIZE: 0.5,
-    CAP_SEGMENTS: 2,
-    RADIAL_SEGMENTS: 5
+    SCALE_FACTOR: 2, // Factor by which to scale objects
+    CAP_SEGMENTS: 2, // Number of segments for caps
+    RADIAL_SEGMENTS: 7, // Number of radial segments
+    MAX_PARTICLES: 1500 // Maximum number of predefined particles
 };

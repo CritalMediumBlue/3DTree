@@ -1,3 +1,7 @@
+/* Include a CSS reset or normalize.css for cross-browser consistency */
+/* Example: @import url('https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css'); */
+
+/* Reset default margin and padding, set full width and height */
 body, html {
     margin: 0;
     padding: 0;
@@ -7,7 +11,8 @@ body, html {
     font-family: Arial, sans-serif;
 }
 
-#fileInput {
+/* Style for file input element */
+.file-input {
     position: fixed;
     top: 5px;
     left: 5px;
@@ -16,6 +21,7 @@ body, html {
     z-index: 1000;
 }
 
+/* Ensure canvas takes full screen */
 canvas {
     display: block;
     width: 100%;
