@@ -71,6 +71,8 @@ document.getElementById('fileInput').addEventListener('change', handleFileInput)
  */
 const animate = () => {
     requestAnimationFrame(animate);
+        camera.lookAt(100, 100, 0);
+
     updateScene();
 };
 

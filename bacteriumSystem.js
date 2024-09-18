@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { quadtree } from 'd3-quadtree';
-import { scaleLinear } from 'd3-scale';
 import { CONFIG } from './config.js';
 import { BacteriumPool } from './bacteriumPool.js';
 
@@ -11,9 +10,7 @@ export class BacteriumSystem {
         this.capsuleGeometryCache = new Map();
         this.edgesGeometryCache = new Map();
         this.quadtree = null;
-        this.colorScale = scaleLinear()
-            .domain([0, CONFIG.MAX_NEIGHBORS])
-            .range([CONFIG.MIN_COLOR, CONFIG.MAX_COLOR]);
+      
     }
 
     updateGeometry(bacterium, adjustedLength) {
@@ -21,7 +18,7 @@ export class BacteriumSystem {
         let newWireframeGeometry = this.edgesGeometryCache.get(adjustedLength);
 
         if (!newGeometry) {
-            newGeometry = new THREE.CapsuleGeometry(CONFIG.SCALE_FACTOR / 2, adjustedLength, CONFIG.CAP_SEGMENTS, CONFIG.RADIAL_SEGMENTS);
+            newGeometry = new THREE.CapsuleGeometry(1 / 2, adjustedLength, CONFIG.CAP_SEGMENTS, CONFIG.RADIAL_SEGMENTS);
             this.capsuleGeometryCache.set(adjustedLength, newGeometry);
             newWireframeGeometry = new THREE.EdgesGeometry(newGeometry);
             this.edgesGeometryCache.set(adjustedLength, newWireframeGeometry);
@@ -41,8 +38,8 @@ export class BacteriumSystem {
 
     buildQuadtree(layer) {
         this.quadtree = quadtree()
-            .x(d => d.x * CONFIG.SCALE_FACTOR)
-            .y(d => (d.y - CONFIG.OFFSET_Y) * CONFIG.SCALE_FACTOR);
+            .x(d => d.x)
+            .y(d => d.y);
         
         layer.forEach(data => {
             this.quadtree.add(data);
@@ -54,8 +51,8 @@ export class BacteriumSystem {
         this.quadtree.visit((node, x1, y1, x2, y2) => {
             if (!node.length) {
                 do {
-                    const dx = node.data.x * CONFIG.SCALE_FACTOR - x;
-                    const dy = (node.data.y - CONFIG.OFFSET_Y) * CONFIG.SCALE_FACTOR - y;
+                    const dx = node.data.x - x;
+                    const dy = node.data.y - y;
                     if (dx * dx + dy * dy < radius * radius) {
                         count++;
                     }
@@ -68,7 +65,7 @@ export class BacteriumSystem {
 
     setColorBasedOnNeighbors(bacterium, x, y) {
         const neighborCount = this.countNeighbors(x, y, CONFIG.NEIGHBOR_RADIUS);
-        const color = new THREE.Color(this.colorScale(neighborCount));
+        const color = new THREE.Color(`rgb(${neighborCount*3}, 0, ${255 - neighborCount*3})`);
         bacterium.material.color.set(color);
     }
 
@@ -87,8 +84,8 @@ export class BacteriumSystem {
 
     calculateAdjustedPosition(x, y) {
         return {
-            x: x * CONFIG.SCALE_FACTOR,
-            y: (y - CONFIG.OFFSET_Y) * CONFIG.SCALE_FACTOR
+            x: x,
+            y: y
         };
     }
 
@@ -101,7 +98,7 @@ export class BacteriumSystem {
         const { x, y, length, angle } = bacteriumData;
         
         const adjustedPosition = this.calculateAdjustedPosition(x, y);
-        const adjustedLength = Math.round(length * CONFIG.SCALE_FACTOR);
+        const adjustedLength = Math.round(length);
     
         this.setBacteriumTransform(bacterium, adjustedPosition, angle, zPosition);
         this.updateGeometry(bacterium, adjustedLength);

@@ -44,7 +44,8 @@ function createScene() {
  */
 function createCamera() {
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 5, 1000);
-    camera.position.set(0, 0, 80);
+    camera.position.set(0, 170, 40); // Position the camera further away
+    camera.lookAt(0, 170, 0);
     return camera;
 }
 
@@ -69,7 +70,9 @@ function createControls(camera, renderer) {
     controls.enableDamping = false;
     controls.autoRotate = false;
     controls.screenSpacePanning = false;
-    controls.maxDistance = 1000;
-    controls.minDistance = 100;
+    controls.maxDistance = 200;
+    controls.minDistance = 40;
+    controls.target.set(0, 170, 0); 
+    controls.update(); // Important! Call this after changing the target
     return controls;
 }

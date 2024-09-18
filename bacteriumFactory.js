@@ -7,7 +7,7 @@ import { CONFIG } from './config.js';
  */
 export function createCapsule() {
     const capsuleGeometry = new THREE.CapsuleGeometry(
-        CONFIG.SCALE_FACTOR / 2,
+        1 / 2,
         1,
         CONFIG.CAP_SEGMENTS,
         CONFIG.RADIAL_SEGMENTS
