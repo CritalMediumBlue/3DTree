@@ -65,8 +65,19 @@ export class BacteriumSystem {
 
     setColorBasedOnNeighbors(bacterium, x, y) {
         const neighborCount = this.countNeighbors(x, y, CONFIG.NEIGHBOR_RADIUS);
-        const color = new THREE.Color(`rgb(${neighborCount*3}, 0, ${255 - neighborCount*3})`);
-        bacterium.material.color.set(color);
+    
+        const materialColor = this.calculateColor(neighborCount, 3, 200, 255);
+        const wireColor = this.calculateColor(neighborCount, 1.5, 100, 127.5);
+    
+        bacterium.material.color.set(materialColor);
+        bacterium.children[0].material.color.set(wireColor);
+    }
+    
+    calculateColor(neighborCount, factor, baseGreen, baseBlue) {
+        const red = neighborCount * factor;
+        const green = baseGreen - neighborCount * factor;
+        const blue = baseBlue - neighborCount * factor;
+        return new THREE.Color(`rgb(${Math.round(red)}, ${Math.round(green)}, ${Math.round(blue)})`);
     }
 
     updateBacteria(timeStep, bacteriumData) {
@@ -82,12 +93,7 @@ export class BacteriumSystem {
         });
     }
 
-    calculateAdjustedPosition(x, y) {
-        return {
-            x: x,
-            y: y
-        };
-    }
+
 
     setBacteriumTransform(bacterium, position, angle, zPosition) {
         bacterium.position.set(position.x, position.y, zPosition);
@@ -97,7 +103,7 @@ export class BacteriumSystem {
     updateBacterium(bacterium, bacteriumData, zPosition) {
         const { x, y, length, angle } = bacteriumData;
         
-        const adjustedPosition = this.calculateAdjustedPosition(x, y);
+        const adjustedPosition = new THREE.Vector3(x, y, 0);
         const adjustedLength = Math.round(length);
     
         this.setBacteriumTransform(bacterium, adjustedPosition, angle, zPosition);
