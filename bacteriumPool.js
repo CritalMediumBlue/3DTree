@@ -8,6 +8,7 @@ export class BacteriumPool {
         this.activeCount = 0;
         this.growthFactor = CONFIG.POOL_GROWTH_FACTOR;
         this.expandPool(initialSize);
+
     }
 
     getBacterium() {
@@ -32,6 +33,7 @@ export class BacteriumPool {
             if (bacterium.userData) {
                 bacterium.userData.colorSet = false;
             }
+
         });
     }
 

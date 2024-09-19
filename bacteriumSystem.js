@@ -10,7 +10,7 @@ export class BacteriumSystem {
         this.capsuleGeometryCache = new Map();
         this.edgesGeometryCache = new Map();
         this.quadtree = null;
-      
+        this.colorMemo = new Map(); // Memoization. Each ID has a color associated with it. The key is the ID and the value is the color.
     }
 
     updateGeometry(bacterium, adjustedLength) {
@@ -72,7 +72,38 @@ export class BacteriumSystem {
         bacterium.material.color.set(materialColor);
         bacterium.children[0].material.color.set(wireColor);
     }
-    
+
+    setColorBasedOnPhenotypeInheritance(bacterium, ID) {
+        const color = this.inheretenaceColor(ID);
+        bacterium.material.color.set(color);
+        bacterium.children[0].material.color.set(color.clone().multiplyScalar(0.5)); // Darker color for wireframe
+    }
+
+    inheretenaceColor(ID) {
+        if (this.colorMemo.has(ID)) {
+            return this.colorMemo.get(ID);
+        }
+
+        let color;
+        if (ID >= 1000n && ID <= 2000n) {
+            // Initial bacteria: assign a random color
+            color = Math.random() < 0.5 ? 
+                new THREE.Color(CONFIG.MAGENTA_PHENOTYPE) : 
+                new THREE.Color(CONFIG.CYAN_PHENOTYPE);
+        } else if (ID > 2000n) {
+            // For subsequent bacteria, inherit color from parent
+            const parentID = ID / 2n;
+            color = this.inheretenaceColor(parentID);
+        } else {
+            // This case should not occur, but we'll handle it just in case
+            console.warn(`Unexpected bacterium ID: ${ID}`);
+            color = new THREE.Color(0xFFFFFF); // Default to white
+        }
+
+        this.colorMemo.set(ID, color);
+        return color;
+    }
+
     calculateColor(neighborCount, factor, baseGreen, baseBlue) {
         const red = neighborCount * factor;
         const green = baseGreen - neighborCount * factor;
@@ -93,22 +124,21 @@ export class BacteriumSystem {
         });
     }
 
-
-
     setBacteriumTransform(bacterium, position, angle, zPosition) {
         bacterium.position.set(position.x, position.y, zPosition);
         bacterium.rotation.z = angle * Math.PI;
     }
 
     updateBacterium(bacterium, bacteriumData, zPosition) {
-        const { x, y, length, angle } = bacteriumData;
+        const { x, y, length, angle, ID } = bacteriumData;
         
         const adjustedPosition = new THREE.Vector3(x, y, 0);
         const adjustedLength = Math.round(length);
     
         this.setBacteriumTransform(bacterium, adjustedPosition, angle, zPosition);
         this.updateGeometry(bacterium, adjustedLength);
-        this.setColorBasedOnNeighbors(bacterium, adjustedPosition.x, adjustedPosition.y);
+        this.setColorBasedOnPhenotypeInheritance(bacterium, ID);
+        // this.setColorBasedOnNeighbors(bacterium, x, y);
         bacterium.visible = true;
     }
 }

@@ -12,7 +12,7 @@ export function createCapsule() {
         CONFIG.CAP_SEGMENTS,
         CONFIG.RADIAL_SEGMENTS
     );
-    const capsuleMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(CONFIG.MIN_COLOR) });
+    const capsuleMaterial = new THREE.MeshBasicMaterial({ color: Math.random()<0.5 ? CONFIG.MAGENTA_PHENOTYPE : CONFIG.CYAN_PHENOTYPE });
     return new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 }
 
