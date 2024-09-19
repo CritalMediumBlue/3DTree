@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 let scene2D, camera2D, renderer2D;
-let plotMesh;
+let totalPlotMesh, magentaPlotMesh, cyanPlotMesh, xAxis, yAxis, xTicks, yTicks;
 
 export function initPlotRenderer() {
     scene2D = new THREE.Scene();
@@ -24,10 +24,77 @@ export function initPlotRenderer() {
 }
 
 function createPlot() {
-    const geometry = new THREE.BufferGeometry();
-    const material = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 3 });
-    plotMesh = new THREE.Line(geometry, material);
-    scene2D.add(plotMesh);
+    const totalGeometry = new THREE.BufferGeometry();
+    const magentaGeometry = new THREE.BufferGeometry();
+    const cyanGeometry = new THREE.BufferGeometry();
+
+    const totalMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 3 });
+    const magentaMaterial = new THREE.PointsMaterial({ color: 0xff00ff, size: 3 });
+    const cyanMaterial = new THREE.PointsMaterial({ color: 0x00ffff, size: 3 });
+
+    totalPlotMesh = new THREE.Points(totalGeometry, totalMaterial);
+    magentaPlotMesh = new THREE.Points(magentaGeometry, magentaMaterial);
+    cyanPlotMesh = new THREE.Points(cyanGeometry, cyanMaterial);
+
+    scene2D.add(totalPlotMesh);
+    scene2D.add(magentaPlotMesh);
+    scene2D.add(cyanPlotMesh);
+
+    createAxes();
+    createTicks();
+}
+
+function createAxes() {
+    const axisColor = 0xffffff;
+    const axisMaterial = new THREE.LineBasicMaterial({ color: axisColor, linewidth: 3 });
+
+    // X-axis
+    const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-1, -0.9, 0),
+        new THREE.Vector3(1, -0.9, 0)
+    ]);
+    xAxis = new THREE.Line(xAxisGeometry, axisMaterial);
+    scene2D.add(xAxis);
+
+    // Y-axis
+    const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-1, -0.9, 0),
+        new THREE.Vector3(-1, 0.9, 0)
+    ]);
+    yAxis = new THREE.Line(yAxisGeometry, axisMaterial);
+    scene2D.add(yAxis);
+}
+
+function createTicks() {
+    const tickColor = 0xffffff;
+    const tickMaterial = new THREE.LineBasicMaterial({ color: tickColor, linewidth: 3 });
+
+    xTicks = new THREE.Group();
+    yTicks = new THREE.Group();
+
+    // X-axis ticks
+    for (let i = -0.8; i <= 1; i += 0.2) {
+        const tickGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(i, -0.9, 0),
+            new THREE.Vector3(i, -0.87, 0)
+        ]);
+        const tick = new THREE.Line(tickGeometry, tickMaterial);
+        xTicks.add(tick);
+    }
+
+    // Y-axis ticks (fixed from 0 to 1500)
+    for (let i = 0; i <= 1500; i += 300) {
+        const y = (i / 1500) * 1.8 - 0.9;
+        const tickGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-1, y, 0),
+            new THREE.Vector3(-0.97, y, 0)
+        ]);
+        const tick = new THREE.Line(tickGeometry, tickMaterial);
+        yTicks.add(tick);
+    }
+
+    scene2D.add(xTicks);
+    scene2D.add(yTicks);
 }
 
 function onWindowResize() {
@@ -38,20 +105,38 @@ function onWindowResize() {
     renderer2D.setSize(window.innerWidth/3, window.innerHeight/3);
 }
 
-export function updatePlot(bacteriaCountHistory) {
-    const points = [];
-    const maxCount = Math.max(...bacteriaCountHistory);
-    const xStep = 2 / (bacteriaCountHistory.length - 1);
+export function updatePlot(totalHistory, magentaHistory, cyanHistory) {
+    const totalPoints = [];
+    const magentaPoints = [];
+    const cyanPoints = [];
+    const xStep = 2 / (totalHistory.length - 1);
 
-    bacteriaCountHistory.forEach((count, index) => {
+    totalHistory.forEach((count, index) => {
         const x = -1 + index * xStep;
-        const y = (count / maxCount) * 0.8 - 0.9; // Scale to fit in the bottom part of the screen
-        points.push(new THREE.Vector3(x, y, 0));
+        const y = (count / 1500) * 1.8 - 0.9; // Scale to fit in the visible area (0 to 1500)
+        totalPoints.push(new THREE.Vector3(x, y, 0));
     });
 
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    plotMesh.geometry.dispose();
-    plotMesh.geometry = geometry;
+    magentaHistory.forEach((count, index) => {
+        const x = -1 + index * xStep;
+        const y = (count / 1500) * 1.8 - 0.9;
+        magentaPoints.push(new THREE.Vector3(x, y, 0));
+    });
+
+    cyanHistory.forEach((count, index) => {
+        const x = -1 + index * xStep;
+        const y = (count / 1500) * 1.8 - 0.9;
+        cyanPoints.push(new THREE.Vector3(x, y, 0));
+    });
+
+    totalPlotMesh.geometry.dispose();
+    totalPlotMesh.geometry = new THREE.BufferGeometry().setFromPoints(totalPoints);
+
+    magentaPlotMesh.geometry.dispose();
+    magentaPlotMesh.geometry = new THREE.BufferGeometry().setFromPoints(magentaPoints);
+
+    cyanPlotMesh.geometry.dispose();
+    cyanPlotMesh.geometry = new THREE.BufferGeometry().setFromPoints(cyanPoints);
 }
 
 export function renderPlot() {

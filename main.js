@@ -1,5 +1,6 @@
 import { setupScene } from './sceneSetup.js';
 import { createBacteriumSystem, updateBacteria } from './bacteriumSystem.js';
+import { getMagentaCount, getCyanCount } from './bacteriumSystem.js';
 import { CONFIG } from './config.js';
 import { initPlotRenderer, renderPlot, updatePlot } from './plotRenderer.js';
 
@@ -7,7 +8,10 @@ import { initPlotRenderer, renderPlot, updatePlot } from './plotRenderer.js';
 const bacteriumData = new Map();
 let currentTimeStep = 0;
 let numberOfTimeSteps = 0;
-let bacteriaCountHistory = [];
+let totalBacteriaCountHistory = [];
+let magentaBacteriaCountHistory = [];
+let cyanBacteriaCountHistory = [];
+let IDsContainedInCurrentTimeStep = new Set();
 
 // Three.js setup 
 const { scene, camera, renderer, controls } = setupScene();
@@ -54,7 +58,7 @@ const processFileData = (e) => {
  */
 const initializeBacteriumData = (data) => {
     bacteriumData.clear();
-    bacteriaCountHistory = [];
+    totalBacteriaCountHistory = [];
     Object.entries(data).forEach(([key, value]) => {
         // Skip the header row
         if (key === "time") return;
@@ -66,7 +70,10 @@ const initializeBacteriumData = (data) => {
         }).filter(item => item !== null);
         
         bacteriumData.set(parseInt(key, 10), bacteriaForTimeStep);
-        bacteriaCountHistory.push(bacteriaForTimeStep.length);
+        
+        const totalCount = bacteriaForTimeStep.length;
+     
+        totalBacteriaCountHistory.push(totalCount);
     });
     currentTimeStep = 0;
     numberOfTimeSteps = bacteriumData.size;
@@ -92,7 +99,27 @@ const animate = () => {
 const updateScene = () => {
     if (bacteriumData.size > 0) {
         updateBacteria(bacteriumSystem, Math.floor(currentTimeStep), bacteriumData);
-        updatePlot(bacteriaCountHistory.slice(0, currentTimeStep + 1));
+        IDsContainedInCurrentTimeStep.clear();
+        
+        // Add all the IDs contained in the current time step to the set
+        const currentBacteria = bacteriumData.get(Math.floor(currentTimeStep));
+        if (currentBacteria) {
+            for (const bacterium of currentBacteria) {
+                IDsContainedInCurrentTimeStep.add(bacterium.ID);
+            }
+        }
+
+        const magentaCount = getMagentaCount(bacteriumSystem, IDsContainedInCurrentTimeStep);
+        const cyanCount = getCyanCount(bacteriumSystem, IDsContainedInCurrentTimeStep);
+
+        magentaBacteriaCountHistory.push(magentaCount);
+        cyanBacteriaCountHistory.push(cyanCount);
+        
+        updatePlot(
+            totalBacteriaCountHistory.slice(0, currentTimeStep + 1),
+            magentaBacteriaCountHistory.slice(0, currentTimeStep + 1),
+            cyanBacteriaCountHistory.slice(0, currentTimeStep + 1)
+        );
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
         //clean color memo if the current time step is 0
         if (currentTimeStep === 0) {

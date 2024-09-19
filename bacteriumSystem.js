@@ -3,6 +3,7 @@ import { quadtree } from 'd3-quadtree';
 import { CONFIG } from './config.js';
 import { BacteriumPool } from './bacteriumPool.js';
 
+
 export class BacteriumSystem {
     constructor(scene) {
         this.scene = scene;
@@ -11,6 +12,7 @@ export class BacteriumSystem {
         this.edgesGeometryCache = new Map();
         this.quadtree = null;
         this.colorMemo = new Map(); // Memoization. Each ID has a color associated with it. The key is the ID and the value is the color.
+        this.currentTimestepBacteria = new Set(); // New: Set to store bacteria IDs in the current timestep
     }
 
     updateGeometry(bacterium, adjustedLength) {
@@ -103,6 +105,28 @@ export class BacteriumSystem {
         return color;
     }
 
+    getMagentaCount() {
+        let count = 0;
+        for (let ID of this.currentTimestepBacteria) {
+            const color = this.colorMemo.get(ID);
+            if (color && color.equals(new THREE.Color(CONFIG.MAGENTA_PHENOTYPE))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    getCyanCount() {
+        let count = 0;
+        for (let ID of this.currentTimestepBacteria) {
+            const color = this.colorMemo.get(ID);
+            if (color && color.equals(new THREE.Color(CONFIG.CYAN_PHENOTYPE))) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     calculateColor(neighborCount, factor, baseGreen, baseBlue) {
         const red = neighborCount * factor;
         const green = baseGreen - neighborCount * factor;
@@ -116,10 +140,12 @@ export class BacteriumSystem {
 
         this.bacteriumPool.reset();
         this.buildQuadtree(layer);
+        this.currentTimestepBacteria.clear(); // Clear the set for the new timestep
 
         layer.forEach((data) => {
             const bacterium = this.bacteriumPool.getBacterium();
             this.updateBacterium(bacterium, data, z);
+            this.currentTimestepBacteria.add(data.ID); // Add the ID to the current timestep set
         });
     }
 
@@ -148,4 +174,12 @@ export function createBacteriumSystem(scene) {
 
 export function updateBacteria(bacteriumSystem, timeStep, bacteriumData) {
     bacteriumSystem.updateBacteria(timeStep, bacteriumData);
+}
+
+export function getMagentaCount(bacteriumSystem) {
+    return bacteriumSystem.getMagentaCount();
+}
+
+export function getCyanCount(bacteriumSystem) {
+    return bacteriumSystem.getCyanCount();
 }

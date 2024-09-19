@@ -34,7 +34,7 @@ function onWindowResize(camera, renderer) {
  */
 function createScene() {
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000, 50, 200);
+    scene.fog = new THREE.Fog(0x000000, 20, 100);
     return scene;
 }
 
