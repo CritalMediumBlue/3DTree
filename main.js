@@ -1,6 +1,5 @@
 import { setupScene } from './sceneSetup.js';
-import { createBacteriumSystem, updateBacteria } from './bacteriumSystem.js';
-import { getMagentaCount, getCyanCount } from './bacteriumSystem.js';
+import { createBacteriumSystem, updateBacteria, getMagentaCount, getCyanCount, clearColorMemo } from './bacteriumSystem.js';
 import { CONFIG } from './config.js';
 import { initPlotRenderer, renderPlot, updatePlot } from './plotRenderer.js';
 
@@ -109,8 +108,8 @@ const updateScene = () => {
             }
         }
 
-        const magentaCount = getMagentaCount(bacteriumSystem, IDsContainedInCurrentTimeStep);
-        const cyanCount = getCyanCount(bacteriumSystem, IDsContainedInCurrentTimeStep);
+        const magentaCount = getMagentaCount(bacteriumSystem);
+        const cyanCount = getCyanCount(bacteriumSystem);
 
         magentaBacteriaCountHistory.push(magentaCount);
         cyanBacteriaCountHistory.push(cyanCount);
@@ -123,7 +122,7 @@ const updateScene = () => {
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
         //clean color memo if the current time step is 0
         if (currentTimeStep === 0) {
-            bacteriumSystem.colorMemo.clear(); // the function clear() removes all key-value pairs from the Map object
+            clearColorMemo(bacteriumSystem);
         }
     }
     controls.update();

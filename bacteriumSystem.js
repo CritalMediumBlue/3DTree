@@ -52,6 +52,10 @@ class ColorManager {
             return color && color.equals(new THREE.Color(targetColor)) ? count + 1 : count;
         }, 0);
     }
+
+    clearColorMemo() {
+        this.colorMemo.clear();
+    }
 }
 
 class GeometryManager {
@@ -142,6 +146,10 @@ export class BacteriumSystem {
     getCyanCount() {
         return this.colorManager.getCyanCount(this.currentTimestepBacteria);
     }
+
+    clearColorMemo() {
+        this.colorManager.clearColorMemo();
+    }
 }
 
 export function createBacteriumSystem(scene) {
@@ -158,4 +166,8 @@ export function getMagentaCount(bacteriumSystem) {
 
 export function getCyanCount(bacteriumSystem) {
     return bacteriumSystem.getCyanCount();
+}
+
+export function clearColorMemo(bacteriumSystem) {
+    bacteriumSystem.clearColorMemo();
 }
