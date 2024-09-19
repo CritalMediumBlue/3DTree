@@ -83,6 +83,10 @@ const updateScene = () => {
     if (bacteriumData.size > 0) {
         updateBacteria(bacteriumSystem, Math.floor(currentTimeStep), bacteriumData);
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
+        //clean color memo if the current time step is 0
+        if (currentTimeStep === 0) {
+            bacteriumSystem.colorMemo.clear(); // the function clear() removes all key-value pairs from the Map object
+        }
     }
     controls.update();
     renderer.render(scene, camera);
