@@ -1,11 +1,13 @@
 import { setupScene } from './sceneSetup.js';
 import { createBacteriumSystem, updateBacteria } from './bacteriumSystem.js';
 import { CONFIG } from './config.js';
+import { initPlotRenderer, renderPlot, updatePlot } from './plotRenderer.js';
 
 // State variables
 const bacteriumData = new Map();
 let currentTimeStep = 0;
 let numberOfTimeSteps = 0;
+let bacteriaCountHistory = [];
 
 // Three.js setup 
 const { scene, camera, renderer, controls } = setupScene();
@@ -15,6 +17,9 @@ document.body.appendChild(renderer.domElement);
 
 // Initialize bacterium system
 const bacteriumSystem = createBacteriumSystem(scene);
+
+// Initialize plot renderer
+initPlotRenderer();
 
 /**
  * Handles file input and triggers file reading
@@ -49,15 +54,19 @@ const processFileData = (e) => {
  */
 const initializeBacteriumData = (data) => {
     bacteriumData.clear();
+    bacteriaCountHistory = [];
     Object.entries(data).forEach(([key, value]) => {
         // Skip the header row
         if (key === "time") return;
         
-        bacteriumData.set(parseInt(key, 10), value.map(item => {
+        const bacteriaForTimeStep = value.map(item => {
             // Skip items with non-numeric IDs
             if (isNaN(item.ID)) return null;
             return { ...item, ID: BigInt(item.ID) };
-        }).filter(item => item !== null));
+        }).filter(item => item !== null);
+        
+        bacteriumData.set(parseInt(key, 10), bacteriaForTimeStep);
+        bacteriaCountHistory.push(bacteriaForTimeStep.length);
     });
     currentTimeStep = 0;
     numberOfTimeSteps = bacteriumData.size;
@@ -71,9 +80,10 @@ document.getElementById('fileInput').addEventListener('change', handleFileInput)
  */
 const animate = () => {
     requestAnimationFrame(animate);
-        camera.lookAt(100, 100, 0);
+    camera.lookAt(100, 100, 0);
 
     updateScene();
+    renderPlot();
 };
 
 /**
@@ -82,6 +92,7 @@ const animate = () => {
 const updateScene = () => {
     if (bacteriumData.size > 0) {
         updateBacteria(bacteriumSystem, Math.floor(currentTimeStep), bacteriumData);
+        updatePlot(bacteriaCountHistory.slice(0, currentTimeStep + 1));
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
         //clean color memo if the current time step is 0
         if (currentTimeStep === 0) {

@@ -22,8 +22,6 @@ export class BacteriumPool {
         while (this.bacteria.length < newSize) {
             const bacterium = createAndAddCapsule(this.scene);
             this.bacteria.push(bacterium);
-            console.log('Bacterium added to pool');
-            console.log('Pool size:', this.bacteria.length);
         }
     }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bacteria Growth 3D Visualization</title>
+    <title>Bacteria Growth 3D Visualization with 2D Plot</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Import map for module imports -->
     <script type="importmap">
@@ -21,6 +21,14 @@
 <body>
     <!-- File input for uploading JSON files -->
     <input type="file" id="fileInput" accept=".json" />
+    
+    <!-- Container for the 3D scene -->
+    <div id="scene-container"></div>
+    
+    <!-- Container for the 2D plot overlay -->
+    <div id="plot-overlay"></div>
+    
     <script type="module" src="main.js"></script>
+    <script type="module" src="plotRenderer.js"></script>
 </body>
 </html>

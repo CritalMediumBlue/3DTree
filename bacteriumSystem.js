@@ -22,7 +22,6 @@ export class BacteriumSystem {
             this.capsuleGeometryCache.set(adjustedLength, newGeometry);
             newWireframeGeometry = new THREE.EdgesGeometry(newGeometry);
             this.edgesGeometryCache.set(adjustedLength, newWireframeGeometry);
-            console.log('New geometries created', adjustedLength);
         }
 
         if (bacterium.geometry !== newGeometry) {
