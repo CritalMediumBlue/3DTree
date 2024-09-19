@@ -9,10 +9,10 @@ export function createCapsule() {
     const capsuleGeometry = new THREE.CapsuleGeometry(
         1 / 2,
         1,
-        CONFIG.CAP_SEGMENTS,
-        CONFIG.RADIAL_SEGMENTS
+        CONFIG.BACTERIUM.CAP_SEGMENTS,
+        CONFIG.BACTERIUM.RADIAL_SEGMENTS
     );
-    const capsuleMaterial = new THREE.MeshBasicMaterial({ color: Math.random()<0.5 ? CONFIG.MAGENTA_PHENOTYPE : CONFIG.CYAN_PHENOTYPE });
+    const capsuleMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffffff) });
     return new THREE.Mesh(capsuleGeometry, capsuleMaterial);
 }
 
@@ -23,7 +23,7 @@ export function createCapsule() {
  */
 export function createWireframe(capsuleGeometry) {
     const wireframeGeometry = new THREE.EdgesGeometry(capsuleGeometry);
-    const wireframeMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(CONFIG.WIREFRAME_COLOR) });
+    const wireframeMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(CONFIG.BACTERIUM.WIREFRAME_COLOR) });
     return new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
 }
 

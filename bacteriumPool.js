@@ -6,7 +6,7 @@ export class BacteriumPool {
         this.scene = scene;
         this.bacteria = [];
         this.activeCount = 0;
-        this.growthFactor = CONFIG.POOL_GROWTH_FACTOR;
+        this.growthFactor = CONFIG.BACTERIUM.POOL_GROWTH_FACTOR;
         this.expandPool(initialSize);
 
     }
@@ -17,6 +17,8 @@ export class BacteriumPool {
         }
         return this.bacteria[this.activeCount++];
     }
+
+    
 
     expandPool(newSize) {
         while (this.bacteria.length < newSize) {
