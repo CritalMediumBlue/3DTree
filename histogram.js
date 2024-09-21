@@ -10,6 +10,7 @@ class Histogram {
         this.yMax = yMax;
         this.histogramData = {};
         this.boxes = {};
+        this.wireframes = {};
 
         this.initializeGrid();
     }
@@ -76,19 +77,36 @@ class Histogram {
             box.position.set(x, y, z);
             this.scene.add(box);
             this.boxes[key] = box;
+
+            // Create wireframe
+            const edges = new THREE.EdgesGeometry(geometry);
+            const wireframeMaterial = new THREE.LineBasicMaterial({
+                color: 0xffffff,
+                linewidth: 1
+            });
+            const wireframe = new THREE.LineSegments(edges, wireframeMaterial);
+            wireframe.position.set(x, y, z);
+            this.scene.add(wireframe);
+            this.wireframes[key] = wireframe;
         } else {
-            // Update existing box
+            // Update existing box and wireframe
             const box = this.boxes[key];
             box.scale.z = height;
             box.position.z = z;
+
+            const wireframe = this.wireframes[key];
+            wireframe.scale.z = height;
+            wireframe.position.z = z;
         }
     }
 
     reset() {
         for (const key in this.boxes) {
             this.scene.remove(this.boxes[key]);
+            this.scene.remove(this.wireframes[key]);
         }
         this.boxes = {};
+        this.wireframes = {};
         this.initializeGrid();
     }
 }
