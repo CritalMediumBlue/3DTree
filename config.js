@@ -29,8 +29,7 @@ export const CONFIG = {
         DEFAULT_PHENOTYPE: 0xFFFFFF,
     },
     HISTOGRAM: {
-        GRID_SIZE_X: 25,
-        GRID_SIZE_Y: 25,
+        GRID_SIZE: 25,
         CUBE_SIZE: 0.5,
         COLOR: 0x00FF00,
         OPACITY: 0.3,
