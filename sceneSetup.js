@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.149.0/examples/jsm/controls/OrbitControls.js';
 import { CONFIG } from './config.js';
 
 /**
@@ -34,7 +34,7 @@ function onWindowResize(camera, renderer) {
  */
 function createScene() {
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x000000, 20, 100);
+    scene.fog = new THREE.Fog(CONFIG.SCENE.FOG_COLOR, CONFIG.SCENE.FOG_NEAR, CONFIG.SCENE.FOG_FAR);
     return scene;
 }
 
@@ -43,9 +43,22 @@ function createScene() {
  * @returns {THREE.PerspectiveCamera} The created camera.
  */
 function createCamera() {
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 5, 1000);
-    camera.position.set(0, 170, 40); // Position the camera further away
-    camera.lookAt(0, 170, 0);
+    const camera = new THREE.PerspectiveCamera(
+        CONFIG.SCENE.CAMERA_FOV,
+        window.innerWidth / window.innerHeight,
+        CONFIG.SCENE.CAMERA_NEAR,
+        CONFIG.SCENE.CAMERA_FAR
+    );
+    camera.position.set(
+        CONFIG.SCENE.CAMERA_POSITION.x,
+        CONFIG.SCENE.CAMERA_POSITION.y,
+        CONFIG.SCENE.CAMERA_POSITION.z
+    );
+    camera.lookAt(
+        CONFIG.SCENE.CAMERA_LOOKAT.x,
+        CONFIG.SCENE.CAMERA_LOOKAT.y,
+        CONFIG.SCENE.CAMERA_LOOKAT.z
+    );
     return camera;
 }
 
@@ -69,10 +82,19 @@ function createControls(camera, renderer) {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = false;
     controls.autoRotate = false;
-    controls.screenSpacePanning = false;
-    controls.maxDistance = 200;
-    controls.minDistance = 40;
-    controls.target.set(0, 170, 0); 
+    controls.screenSpacePanning = true;
+    controls.maxDistance = CONFIG.SCENE.CONTROLS_MAX_DISTANCE;
+    controls.minDistance = CONFIG.SCENE.CONTROLS_MIN_DISTANCE;
+    controls.target.set(
+        CONFIG.SCENE.CAMERA_LOOKAT.x,
+        CONFIG.SCENE.CAMERA_LOOKAT.y,
+        CONFIG.SCENE.CAMERA_LOOKAT.z
+    );
     controls.update(); // Important! Call this after changing the target
     return controls;
 }
+
+/**
+ * Adds a grid to the scene for reference.
+ * @param {THREE.Scene} scene - The scene to add the grid to.
+ */

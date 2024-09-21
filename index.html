@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bacteria Growth 3D Visualization with 2D Plot</title>
+    <title>Biofilm monolayer</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" >
     <!-- Import map for module imports -->
     <script type="importmap">
         {
           "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@v0.149.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/",
-            "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@v0.149.0/examples/jsm/controls/OrbitControls.js",
-            "d3-quadtree": "https://cdn.jsdelivr.net/npm/d3-quadtree@3/+esm",
-            "d3-scale": "https://cdn.jsdelivr.net/npm/d3-scale@4/+esm"
+            "d3-quadtree": "https://cdn.jsdelivr.net/npm/d3-quadtree@3/+esm"
           }
         }
     </script>
@@ -29,6 +27,5 @@
     <div id="plot-overlay"></div>
     
     <script type="module" src="main.js"></script>
-    <script type="module" src="plotRenderer.js"></script>
 </body>
 </html>

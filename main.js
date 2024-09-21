@@ -2,6 +2,7 @@ import { setupScene } from './sceneSetup.js';
 import { createBacteriumSystem, updateBacteria, getMagentaCount, getCyanCount, clearColorMemo } from './bacteriumSystem.js';
 import { CONFIG } from './config.js';
 import { initPlotRenderer, renderPlot, updatePlot } from './plotRenderer.js';
+import { Histogram } from './histogram.js';
 
 // State variables
 const bacteriumData = new Map();
@@ -11,9 +12,12 @@ let totalBacteriaCountHistory = [];
 let magentaBacteriaCountHistory = [];
 let cyanBacteriaCountHistory = [];
 let IDsContainedInCurrentTimeStep = new Set();
+let previousIDsContainedInTimeStep = new Set();
 
 // Three.js setup 
 const { scene, camera, renderer, controls } = setupScene();
+
+// Add grid to the scene
 
 // Add renderer to DOM
 document.body.appendChild(renderer.domElement);
@@ -23,6 +27,15 @@ const bacteriumSystem = createBacteriumSystem(scene);
 
 // Initialize plot renderer
 initPlotRenderer();
+
+// Initialize histogram
+const histogram = new Histogram(
+    scene,
+    CONFIG.HISTOGRAM.X_MIN,
+    CONFIG.HISTOGRAM.X_MAX,
+    CONFIG.HISTOGRAM.Y_MIN,
+    CONFIG.HISTOGRAM.Y_MAX
+);
 
 /**
  * Handles file input and triggers file reading
@@ -58,6 +71,7 @@ const processFileData = (e) => {
 const initializeBacteriumData = (data) => {
     bacteriumData.clear();
     totalBacteriaCountHistory = [];
+    histogram.reset();
     Object.entries(data).forEach(([key, value]) => {
         // Skip the header row
         if (key === "time") return;
@@ -76,6 +90,7 @@ const initializeBacteriumData = (data) => {
     });
     currentTimeStep = 0;
     numberOfTimeSteps = bacteriumData.size;
+    previousIDsContainedInTimeStep.clear();
 };
 
 // Add event listener for file input
@@ -86,10 +101,12 @@ document.getElementById('fileInput').addEventListener('change', handleFileInput)
  */
 const animate = () => {
     requestAnimationFrame(animate);
-    camera.lookAt(100, 100, 0);
 
     updateScene();
     renderPlot();
+    
+    controls.update();
+    renderer.render(scene, camera);
 };
 
 /**
@@ -105,6 +122,10 @@ const updateScene = () => {
         if (currentBacteria) {
             for (const bacterium of currentBacteria) {
                 IDsContainedInCurrentTimeStep.add(bacterium.ID);
+                // Check if this is a new bacterium
+                if (!previousIDsContainedInTimeStep.has(bacterium.ID)) {
+                    histogram.addBacterium(bacterium.x, bacterium.y);
+                }
             }
         }
 
@@ -119,14 +140,18 @@ const updateScene = () => {
             magentaBacteriaCountHistory.slice(0, currentTimeStep + 1),
             cyanBacteriaCountHistory.slice(0, currentTimeStep + 1)
         );
+        
+        // Update previousIDsContainedInTimeStep for the next iteration
+        previousIDsContainedInTimeStep = new Set(IDsContainedInCurrentTimeStep);
+        
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
         //clean color memo if the current time step is 0
         if (currentTimeStep === 0) {
             clearColorMemo(bacteriumSystem);
+            histogram.reset();
+            previousIDsContainedInTimeStep.clear();
         }
     }
-    controls.update();
-    renderer.render(scene, camera);
 };
 
 // Start animation loop

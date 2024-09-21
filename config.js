@@ -1,6 +1,15 @@
 export const CONFIG = {
     SCENE: {
-        // Scene-specific configurations can be added here
+        FOG_COLOR: 0x000000,
+        FOG_NEAR: 20,
+        FOG_FAR: 300,
+        CAMERA_FOV: 75,
+        CAMERA_NEAR: 5,
+        CAMERA_FAR: 1000,
+        CAMERA_POSITION: { x: 0, y: 170, z: 70 },
+        CAMERA_LOOKAT: { x: 0, y: 170, z: 0 },
+        CONTROLS_MAX_DISTANCE: 400,
+        CONTROLS_MIN_DISTANCE: 50
     },
     BACTERIUM: {
         CAP_SEGMENTS: 2,
@@ -9,14 +18,39 @@ export const CONFIG = {
         POOL_GROWTH_FACTOR: 1.1,
         WIREFRAME_SCALE: 1.005,
         WIREFRAME_COLOR: 'rgb(100, 100, 100)',
-        NEIGHBOR_RADIUS: 9, // Radius to check for neighbors (in scaled units)
-        MAX_NEIGHBORS: 60, // Maximum number of neighbors for color scaling
+        NEIGHBOR_RADIUS: 9,
+        MAX_NEIGHBORS: 60,
     },
     COLORS: {
-        MIN_COLOR: 0x0000FF, // Blue color for bacteria with few neighbors
-        MAX_COLOR: 0xFF0000, // Red color for bacteria with many neighbors
-        MAGENTA_PHENOTYPE: 0xFF00FF, // Magenta color for bacteria
-        CYAN_PHENOTYPE: 0x00FFFF, // Cyan color for bacteria
-        DEFAULT_PHENOTYPE: 0xFFFFFF, // Default color for bacteria
+        MIN_COLOR: 0x0000FF,
+        MAX_COLOR: 0xFF0000,
+        MAGENTA_PHENOTYPE: 0xFF00FF,
+        CYAN_PHENOTYPE: 0x00FFFF,
+        DEFAULT_PHENOTYPE: 0xFFFFFF,
+    },
+    HISTOGRAM: {
+        GRID_SIZE: 20,
+        CUBE_SIZE: 0.5,
+        COLOR: 0x00FF00,
+        OPACITY: 0.1,
+        X_MIN: -50,
+        X_MAX: 50,
+        Y_MIN: 140,
+        Y_MAX: 200,
+    },
+    PLOT_RENDERER: {
+        MAX_POINTS: 1000,
+        POINT_SIZE: 2,
+        AXIS_COLOR: 0xffffff,
+        PLOT_WIDTH_RATIO: 1/4,
+        PLOT_HEIGHT_RATIO: 1/4,
+        MAX_Y_VALUE: 1500,
+        Y_TICK_STEP: 200,
+        X_AXIS_Y: -0.95,
+        Y_AXIS_X: -1.75,
+        X_MAX_Y: 1.7,
+        Y_MAX_X: 0.95,
+        PLOT_Y_SCALE: 1.8,
+        PLOT_Y_OFFSET: -0.9
     },
 };
