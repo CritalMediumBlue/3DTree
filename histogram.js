@@ -43,6 +43,8 @@ class Histogram {
         this.updateVisualization(gridX, gridY);
     }
 
+  
+
     updateVisualization(gridX, gridY) {
         const key = `${gridX},${gridY}`;
         const height = this.histogramData[key];
@@ -73,12 +75,8 @@ class Histogram {
             const box = this.boxes[key];
             box.scale.z = height;
             box.position.z = z;
-            
-            // Adjust opacity based on height
-            const maxOpacity = CONFIG.HISTOGRAM.OPACITY;
-            const minOpacity = 0.1;
-            const opacity = Math.min(maxOpacity, minOpacity + (height / 100) * (maxOpacity - minOpacity));
-            box.material.opacity = opacity;
+           // box.material.opacity = opacity;
+            //console.log(opacity);
         }
     }
 

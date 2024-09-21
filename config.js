@@ -30,7 +30,7 @@ export const CONFIG = {
     },
     HISTOGRAM: {
         GRID_SIZE: 25,
-        CUBE_SIZE: 0.5,
+        CUBE_SIZE: 0.1,
         COLOR: 0x00FF00,
         OPACITY: 0.3,
         X_MIN: -50,
