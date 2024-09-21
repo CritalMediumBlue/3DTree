@@ -54,8 +54,8 @@ class Histogram {
         const yStep = yRange / CONFIG.HISTOGRAM.GRID_SIZE;
 
         // Reduce the size of each box by 5% to create gaps
-        const boxWidthScale = 0.95;
-        const boxDepthScale = 0.95;
+        const boxWidthScale = 0.92;
+        const boxDepthScale = 0.92;
 
         const x = this.xMin + (gridX + 0.5) * xStep;
         const y = this.yMin + (gridY + 0.5) * yStep;

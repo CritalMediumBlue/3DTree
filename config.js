@@ -1,10 +1,10 @@
 export const CONFIG = {
     SCENE: {
-        FOG_COLOR: 0x000000,
-        FOG_NEAR: 20,
-        FOG_FAR: 300,
+        FOG_COLOR: 0x0f0f0f,
+        FOG_NEAR: 30,
+        FOG_FAR: 150,
         CAMERA_FOV: 75,
-        CAMERA_NEAR: 5,
+        CAMERA_NEAR: 30,
         CAMERA_FAR: 1000,
         CAMERA_POSITION: { x: 0, y: 170, z: 70 },
         CAMERA_LOOKAT: { x: 0, y: 170, z: 0 },
@@ -31,7 +31,7 @@ export const CONFIG = {
     HISTOGRAM: {
         GRID_SIZE: 25,
         CUBE_SIZE: 0.1,
-        COLOR: 0x00FF00,
+        COLOR: 0xFFFFFF,
         OPACITY: 0.3,
         X_MIN: -50,
         X_MAX: 50,
