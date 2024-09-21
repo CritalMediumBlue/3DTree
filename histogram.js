@@ -43,8 +43,6 @@ class Histogram {
         this.updateVisualization(gridX, gridY);
     }
 
-  
-
     updateVisualization(gridX, gridY) {
         const key = `${gridX},${gridY}`;
         const height = this.histogramData[key];
@@ -54,13 +52,21 @@ class Histogram {
         const xStep = xRange / CONFIG.HISTOGRAM.GRID_SIZE;
         const yStep = yRange / CONFIG.HISTOGRAM.GRID_SIZE;
 
+        // Reduce the size of each box by 5% to create gaps
+        const boxWidthScale = 0.95;
+        const boxDepthScale = 0.95;
+
         const x = this.xMin + (gridX + 0.5) * xStep;
         const y = this.yMin + (gridY + 0.5) * yStep;
         const z = height * CONFIG.HISTOGRAM.CUBE_SIZE / 2;
 
         if (!this.boxes[key]) {
             // Create a new box if it doesn't exist
-            const geometry = new THREE.BoxGeometry(xStep, yStep, CONFIG.HISTOGRAM.CUBE_SIZE);
+            const geometry = new THREE.BoxGeometry(
+                xStep * boxWidthScale,
+                yStep * boxDepthScale,
+                CONFIG.HISTOGRAM.CUBE_SIZE
+            );
             const material = new THREE.MeshBasicMaterial({
                 color: CONFIG.HISTOGRAM.COLOR,
                 opacity: CONFIG.HISTOGRAM.OPACITY,
@@ -75,8 +81,6 @@ class Histogram {
             const box = this.boxes[key];
             box.scale.z = height;
             box.position.z = z;
-           // box.material.opacity = opacity;
-            //console.log(opacity);
         }
     }
 
