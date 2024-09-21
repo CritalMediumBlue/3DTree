@@ -94,7 +94,3 @@ function createControls(camera, renderer) {
     return controls;
 }
 
-/**
- * Adds a grid to the scene for reference.
- * @param {THREE.Scene} scene - The scene to add the grid to.
- */

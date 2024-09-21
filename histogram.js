@@ -9,7 +9,7 @@ class Histogram {
         this.yMin = yMin;
         this.yMax = yMax;
         this.histogramData = {};
-        this.cubes = [];
+        this.boxes = {};
 
         this.initializeGrid();
     }
@@ -56,33 +56,37 @@ class Histogram {
         const y = this.yMin + (gridY + 0.5) * yStep;
         const z = height * CONFIG.HISTOGRAM.CUBE_SIZE / 2;
 
-        const geometry = new THREE.BoxGeometry(xStep, yStep, CONFIG.HISTOGRAM.CUBE_SIZE);
-        const wireframe = new THREE.WireframeGeometry(geometry);
-        const material = new THREE.LineBasicMaterial({
-            color: CONFIG.HISTOGRAM.COLOR,
-            opacity: CONFIG.HISTOGRAM.OPACITY,
-            transparent: true
-        });
-        const line = new THREE.LineSegments(wireframe, material);
-
-
-
-      
-        // Add the new cube
-        line.position.set(x, y, z);
-
-        this.scene.add(line);
-        this.cubes.push(line);
-    
-
-        
+        if (!this.boxes[key]) {
+            // Create a new box if it doesn't exist
+            const geometry = new THREE.BoxGeometry(xStep, yStep, CONFIG.HISTOGRAM.CUBE_SIZE);
+            const material = new THREE.MeshBasicMaterial({
+                color: CONFIG.HISTOGRAM.COLOR,
+                opacity: CONFIG.HISTOGRAM.OPACITY,
+                transparent: true
+            });
+            const box = new THREE.Mesh(geometry, material);
+            box.position.set(x, y, z);
+            this.scene.add(box);
+            this.boxes[key] = box;
+        } else {
+            // Update existing box
+            const box = this.boxes[key];
+            box.scale.z = height;
+            box.position.z = z;
+            
+            // Adjust opacity based on height
+            const maxOpacity = CONFIG.HISTOGRAM.OPACITY;
+            const minOpacity = 0.1;
+            const opacity = Math.min(maxOpacity, minOpacity + (height / 100) * (maxOpacity - minOpacity));
+            box.material.opacity = opacity;
+        }
     }
 
     reset() {
-        for (const cube of this.cubes) {
-            this.scene.remove(cube);
+        for (const key in this.boxes) {
+            this.scene.remove(this.boxes[key]);
         }
-        this.cubes = [];
+        this.boxes = {};
         this.initializeGrid();
     }
 }

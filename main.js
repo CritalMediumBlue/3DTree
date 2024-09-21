@@ -17,8 +17,6 @@ let previousIDsContainedInTimeStep = new Set();
 // Three.js setup 
 const { scene, camera, renderer, controls } = setupScene();
 
-// Add grid to the scene
-
 // Add renderer to DOM
 document.body.appendChild(renderer.domElement);
 
@@ -53,15 +51,10 @@ const handleFileInput = (event) => {
  * @param {ProgressEvent<FileReader>} e - The file reader event
  */
 const processFileData = (e) => {
-    try {
-        const data = JSON.parse(e.target.result);
-        initializeBacteriumData(data);
-        controls.update();
-        console.log('Number of time steps:', numberOfTimeSteps);
-    } catch (error) {
-        console.error('Error processing file data:', error);
-        alert('Error processing file. Please ensure it is a valid JSON file.');
-    }
+    const data = JSON.parse(e.target.result);
+    initializeBacteriumData(data);
+    controls.update();
+    console.log('Number of time steps:', numberOfTimeSteps);
 };
 
 /**
@@ -71,6 +64,8 @@ const processFileData = (e) => {
 const initializeBacteriumData = (data) => {
     bacteriumData.clear();
     totalBacteriaCountHistory = [];
+    magentaBacteriaCountHistory = [];
+    cyanBacteriaCountHistory = [];
     histogram.reset();
     Object.entries(data).forEach(([key, value]) => {
         // Skip the header row
@@ -85,7 +80,6 @@ const initializeBacteriumData = (data) => {
         bacteriumData.set(parseInt(key, 10), bacteriaForTimeStep);
         
         const totalCount = bacteriaForTimeStep.length;
-     
         totalBacteriaCountHistory.push(totalCount);
     });
     currentTimeStep = 0;
@@ -134,11 +128,12 @@ const updateScene = () => {
 
         magentaBacteriaCountHistory.push(magentaCount);
         cyanBacteriaCountHistory.push(cyanCount);
-        
+
+        // Update the plot every frame
         updatePlot(
-            totalBacteriaCountHistory.slice(0, currentTimeStep + 1),
-            magentaBacteriaCountHistory.slice(0, currentTimeStep + 1),
-            cyanBacteriaCountHistory.slice(0, currentTimeStep + 1)
+            totalBacteriaCountHistory,
+            magentaBacteriaCountHistory,
+            cyanBacteriaCountHistory
         );
         
         // Update previousIDsContainedInTimeStep for the next iteration
@@ -150,6 +145,8 @@ const updateScene = () => {
             clearColorMemo(bacteriumSystem);
             histogram.reset();
             previousIDsContainedInTimeStep.clear();
+            // Don't reset the history arrays when the simulation loops back to the beginning
+            // This allows the plot to continue showing data beyond the initial cycle
         }
     }
 };
