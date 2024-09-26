@@ -79,8 +79,8 @@ const initializeBacteriumData = (data) => {
         
         bacteriumData.set(parseInt(key, 10), bacteriaForTimeStep);
         
-        const totalCount = bacteriaForTimeStep.length;
-        totalBacteriaCountHistory.push(totalCount);
+        // Removed: const totalCount = bacteriaForTimeStep.length;
+        // Removed: totalBacteriaCountHistory.push(totalCount);
     });
     currentTimeStep = 0;
     numberOfTimeSteps = bacteriumData.size;
@@ -125,7 +125,9 @@ const updateScene = () => {
 
         const magentaCount = getMagentaCount(bacteriumSystem);
         const cyanCount = getCyanCount(bacteriumSystem);
+        const totalCount = currentBacteria ? currentBacteria.length : 0;
 
+        totalBacteriaCountHistory.push(totalCount);
         magentaBacteriaCountHistory.push(magentaCount);
         cyanBacteriaCountHistory.push(cyanCount);
 

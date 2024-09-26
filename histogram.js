@@ -18,11 +18,11 @@ class Histogram {
     initializeGrid() {
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
-        const xStep = xRange / CONFIG.HISTOGRAM.GRID_SIZE;
-        const yStep = yRange / CONFIG.HISTOGRAM.GRID_SIZE;
+        const xStep = xRange / 20;  // Changed from 10 to 20
+        const yStep = yRange / 12;  // Changed from 6 to 12
 
-        for (let i = 0; i < CONFIG.HISTOGRAM.GRID_SIZE; i++) {
-            for (let j = 0; j < CONFIG.HISTOGRAM.GRID_SIZE; j++) {
+        for (let i = 0; i < 20; i++) {  // Changed from 10 to 20
+            for (let j = 0; j < 12; j++) {  // Changed from 6 to 12
                 const key = `${i},${j}`;
                 this.histogramData[key] = 0;
             }
@@ -32,8 +32,8 @@ class Histogram {
     addBacterium(x, y) {
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
-        const xStep = xRange / CONFIG.HISTOGRAM.GRID_SIZE;
-        const yStep = yRange / CONFIG.HISTOGRAM.GRID_SIZE;
+        const xStep = xRange / 20;  // Changed from 10 to 20
+        const yStep = yRange / 12;  // Changed from 6 to 12
 
         const gridX = Math.floor((x - this.xMin) / xStep);
         const gridY = Math.floor((y - this.yMin) / yStep);
@@ -50,8 +50,8 @@ class Histogram {
 
         const xRange = this.xMax - this.xMin;
         const yRange = this.yMax - this.yMin;
-        const xStep = xRange / CONFIG.HISTOGRAM.GRID_SIZE;
-        const yStep = yRange / CONFIG.HISTOGRAM.GRID_SIZE;
+        const xStep = xRange / 20;  // Changed from 10 to 20
+        const yStep = yRange / 12;  // Changed from 6 to 12
 
         // Reduce the size of each box by 5% to create gaps
         const boxWidthScale = 0.85;

@@ -14,9 +14,9 @@ class PlotRenderer {
         this.scene2D = null;
         this.camera2D = null;
         this.renderer2D = null;
-        this.totalPlotMesh = null;
-        this.magentaPlotMesh = null;
-        this.cyanPlotMesh = null;
+        this.totalPlotPoints = null;
+        this.magentaPlotPoints = null;
+        this.cyanPlotPoints = null;
         this.yTicks = null;
         this.needsRender = false;
         this.currentIndex = 0;
@@ -29,10 +29,8 @@ class PlotRenderer {
      */
     init() {
         this.scene2D = new THREE.Scene();
-
         this.camera2D = new THREE.OrthographicCamera(-2, 2, 1, -1, 0.1, 100);
         this.camera2D.position.z = 1;
-
         this.renderer2D = new THREE.WebGLRenderer({ alpha: true });
         this.renderer2D.setSize(window.innerWidth * CONFIG.PLOT_RENDERER.PLOT_WIDTH_RATIO, window.innerHeight * CONFIG.PLOT_RENDERER.PLOT_HEIGHT_RATIO);
         this.renderer2D.domElement.style.position = 'absolute';
@@ -42,13 +40,13 @@ class PlotRenderer {
     }
 
     /**
-     * Creates the plot by setting up geometries, materials, meshes, and ticks.
+     * Creates the plot by setting up geometries, materials, points, and ticks.
      * @private
      */
     createPlot() {
         this.createPlotGeometries();
         this.createPlotMaterials();
-        this.createPlotMeshes();
+        this.createPlotPoints();
         this.createTicks();
     }
 
@@ -74,21 +72,21 @@ class PlotRenderer {
      * @private
      */
     createPlotMaterials() {
-        this.totalMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-        this.magentaMaterial = new THREE.LineBasicMaterial({ color: 0xff00ff });
-        this.cyanMaterial = new THREE.LineBasicMaterial({ color: 0x00ffff });
+        this.totalMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
+        this.magentaMaterial = new THREE.PointsMaterial({ color: 0xff00ff, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
+        this.cyanMaterial = new THREE.PointsMaterial({ color: 0x00ffff, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
     }
 
     /**
-     * Creates the meshes for the plot and adds them to the scene.
+     * Creates the point clouds for the plot and adds them to the scene.
      * @private
      */
-    createPlotMeshes() {
-        this.totalPlotMesh = new THREE.Line(this.totalGeometry, this.totalMaterial);
-        this.magentaPlotMesh = new THREE.Line(this.magentaGeometry, this.magentaMaterial);
-        this.cyanPlotMesh = new THREE.Line(this.cyanGeometry, this.cyanMaterial);
+    createPlotPoints() {
+        this.totalPlotPoints = new THREE.Points(this.totalGeometry, this.totalMaterial);
+        this.magentaPlotPoints = new THREE.Points(this.magentaGeometry, this.magentaMaterial);
+        this.cyanPlotPoints = new THREE.Points(this.cyanGeometry, this.cyanMaterial);
 
-        this.scene2D.add(this.totalPlotMesh, this.magentaPlotMesh, this.cyanPlotMesh);
+        this.scene2D.add(this.totalPlotPoints, this.magentaPlotPoints, this.cyanPlotPoints);
     }
 
     /**
@@ -150,15 +148,15 @@ class PlotRenderer {
             }
             
             geometry.attributes.position.needsUpdate = true;
-            geometry.setDrawRange(0, CONFIG.PLOT_RENDERER.MAX_POINTS);
+            geometry.setDrawRange(0, Math.min(this.currentIndex, CONFIG.PLOT_RENDERER.MAX_POINTS));
         };
         
-        updateGeometry(this.totalPlotMesh.geometry, totalHistory);
-        updateGeometry(this.magentaPlotMesh.geometry, magentaHistory);
-        updateGeometry(this.cyanPlotMesh.geometry, cyanHistory);
+        updateGeometry(this.totalPlotPoints.geometry, totalHistory);
+        updateGeometry(this.magentaPlotPoints.geometry, magentaHistory);
+        updateGeometry(this.cyanPlotPoints.geometry, cyanHistory);
         
         this.currentIndex++;
-        if (this.currentIndex >= CONFIG.PLOT_RENDERER.MAX_POINTS) {
+        if (this.currentIndex > CONFIG.PLOT_RENDERER.MAX_POINTS) {
             this.offset++;
         }
         this.needsRender = true;

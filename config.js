@@ -1,12 +1,12 @@
 export const CONFIG = {
     SCENE: {
         FOG_COLOR: 0x0f0000,
-        FOG_NEAR: 10,
-        FOG_FAR: 110,
+        FOG_NEAR: 5,
+        FOG_FAR: 100,
         CAMERA_FOV: 75,
-        CAMERA_NEAR: 10,
+        CAMERA_NEAR: 5,
         CAMERA_FAR: 1000,
-        CAMERA_POSITION: { x: 0, y: 170, z: 70 },
+        CAMERA_POSITION: { x: 0, y: 170, z: -70 },
         CAMERA_LOOKAT: { x: 0, y: 170, z: 0 },
         CONTROLS_MAX_DISTANCE: 400,
         CONTROLS_MIN_DISTANCE: 50
@@ -29,8 +29,8 @@ export const CONFIG = {
         DEFAULT_PHENOTYPE: 0xFFFFFF,
     },
     HISTOGRAM: {
-        GRID_SIZE: 20,
-        CUBE_SIZE: 0.25,
+        GRID_SIZE: 40,
+        CUBE_SIZE: 0.2,
         COLOR: 0x808080,
         OPACITY: 0.8,
         X_MIN: -50,
@@ -40,7 +40,7 @@ export const CONFIG = {
     },
     PLOT_RENDERER: {
         MAX_POINTS: 200,
-        POINT_SIZE: 2.5,
+        POINT_SIZE:3.5,
         AXIS_COLOR: 0x808080,
         PLOT_WIDTH_RATIO: 1/4,
         PLOT_HEIGHT_RATIO: 1/4,
