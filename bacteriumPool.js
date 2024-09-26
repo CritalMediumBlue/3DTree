@@ -39,7 +39,4 @@ export class BacteriumPool {
         });
     }
 
-    getActiveBacteria() {
-        return this.bacteria.slice(0, this.activeCount);
-    }
 }

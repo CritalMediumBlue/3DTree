@@ -121,9 +121,27 @@ export class BacteriumSystem {
             this.currentTimestepBacteria.add(data.ID);
         });
     }
-
+/**
+ * Updates a bacterium's properties based on the provided data
+ * @param {THREE.Mesh} bacterium - The bacterium mesh to update
+ * @param {Object} bacteriumData - The data for the bacterium
+ * @param {number} bacteriumData.x - The x-coordinate
+ * @param {number} bacteriumData.y - The y-coordinate
+ * @param {number} bacteriumData.length - The length of the bacterium
+ * @param {number} bacteriumData.angle - The angle of the bacterium
+ * @param {BigInt} bacteriumData.ID - The unique identifier of the bacterium
+ * @param {number} zPosition - The z-coordinate for the bacterium
+ */
     updateBacterium(bacterium, bacteriumData, zPosition) {
+        if (!bacterium || !bacteriumData) {
+            console.error('Invalid input to updateBacterium');
+            return;
+        }
         const { x, y, length, angle, ID } = bacteriumData;
+        if (x === undefined || y === undefined || length === undefined || angle === undefined || ID === undefined) {
+            console.error('Missing required properties in bacteriumData');
+            return;
+        }
         
         const adjustedPosition = new THREE.Vector3(x, y, 0);
         const adjustedLength = Math.round(length);

@@ -51,10 +51,15 @@ const handleFileInput = (event) => {
  * @param {ProgressEvent<FileReader>} e - The file reader event
  */
 const processFileData = (e) => {
-    const data = JSON.parse(e.target.result);
-    initializeBacteriumData(data);
-    controls.update();
-    console.log('Number of time steps:', numberOfTimeSteps);
+    try {
+        const data = JSON.parse(e.target.result);
+        initializeBacteriumData(data);
+        controls.update();
+        console.log('Number of time steps:', numberOfTimeSteps);
+    } catch (error) {
+        console.error('Error processing file:', error);
+
+    }
 };
 
 /**
@@ -62,26 +67,34 @@ const processFileData = (e) => {
  * @param {Object} data - The parsed JSON data
  */
 const initializeBacteriumData = (data) => {
+    resetDataStructures();
+    processDataEntries(data);
+    updateTimeStepInfo();
+};
+
+const resetDataStructures = () => {
     bacteriumData.clear();
     totalBacteriaCountHistory = [];
     magentaBacteriaCountHistory = [];
     cyanBacteriaCountHistory = [];
     histogram.reset();
+};
+
+const processDataEntries = (data) => {
     Object.entries(data).forEach(([key, value]) => {
-        // Skip the header row
         if (key === "time") return;
-        
-        const bacteriaForTimeStep = value.map(item => {
-            // Skip items with non-numeric IDs
-            if (isNaN(item.ID)) return null;
-            return { ...item, ID: BigInt(item.ID) };
-        }).filter(item => item !== null);
-        
+        const bacteriaForTimeStep = processBacteriaForTimeStep(value);
         bacteriumData.set(parseInt(key, 10), bacteriaForTimeStep);
-        
-        // Removed: const totalCount = bacteriaForTimeStep.length;
-        // Removed: totalBacteriaCountHistory.push(totalCount);
     });
+};
+
+const processBacteriaForTimeStep = (bacteria) => {
+    return bacteria
+        .map(item => isNaN(item.ID) ? null : { ...item, ID: BigInt(item.ID) })
+        .filter(item => item !== null);
+};
+
+const updateTimeStepInfo = () => {
     currentTimeStep = 0;
     numberOfTimeSteps = bacteriumData.size;
     previousIDsContainedInTimeStep.clear();
@@ -105,18 +118,17 @@ const animate = () => {
 
 /**
  * Updates the scene for each frame
+ * @returns {void}
  */
 const updateScene = () => {
     if (bacteriumData.size > 0) {
         updateBacteria(bacteriumSystem, Math.floor(currentTimeStep), bacteriumData);
-        IDsContainedInCurrentTimeStep.clear();
         
-        // Add all the IDs contained in the current time step to the set
+        IDsContainedInCurrentTimeStep.clear(); // Reuse the existing Set
         const currentBacteria = bacteriumData.get(Math.floor(currentTimeStep));
         if (currentBacteria) {
             for (const bacterium of currentBacteria) {
                 IDsContainedInCurrentTimeStep.add(bacterium.ID);
-                // Check if this is a new bacterium
                 if (!previousIDsContainedInTimeStep.has(bacterium.ID)) {
                     histogram.addBacterium(bacterium.x, bacterium.y);
                 }
@@ -137,10 +149,11 @@ const updateScene = () => {
             magentaBacteriaCountHistory,
             cyanBacteriaCountHistory
         );
-        
-        // Update previousIDsContainedInTimeStep for the next iteration
-        previousIDsContainedInTimeStep = new Set(IDsContainedInCurrentTimeStep);
-        
+
+        // Swap the sets instead of creating a new one
+        [previousIDsContainedInTimeStep, IDsContainedInCurrentTimeStep] = [IDsContainedInCurrentTimeStep, previousIDsContainedInTimeStep];
+
+       
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
         //clean color memo if the current time step is 0
         if (currentTimeStep === 0) {
