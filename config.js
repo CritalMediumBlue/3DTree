@@ -52,7 +52,7 @@ export const CONFIG = {
     },
     PLOT_RENDERER: {
         MAX_POINTS: 1000,
-        POINT_SIZE:3,
+        POINT_SIZE:2,
         AXIS_COLOR: 0x808080,
         PLOT_WIDTH_RATIO: 1/4,
         PLOT_HEIGHT_RATIO: 1/4,

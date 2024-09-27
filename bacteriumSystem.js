@@ -7,7 +7,7 @@ class ColorManager {
     constructor() {
         this.colorMemo = new Map();
         this.signal = CONFIG.BACTERIUM.SIGNAL.DEFAULT/100;
-        this.alpha = CONFIG.BACTERIUM.ALPHA.DEFAULT*3;
+        this.alpha = CONFIG.BACTERIUM.ALPHA.DEFAULT;
 
     }
 
@@ -16,7 +16,7 @@ class ColorManager {
     }
 
     setAlphaValue(value) {
-        this.alpha = Math.max(CONFIG.BACTERIUM.ALPHA.MIN, Math.min(CONFIG.BACTERIUM.ALPHA.MAX, value))*3;
+        this.alpha = Math.max(CONFIG.BACTERIUM.ALPHA.MIN, Math.min(CONFIG.BACTERIUM.ALPHA.MAX, value));
     }
 
     inheritanceColor(ID, neighbors) {
