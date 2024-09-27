@@ -9,7 +9,7 @@ export const CONFIG = {
         CAMERA_POSITION: { x: 0, y: 170, z: -70 },
         CAMERA_LOOKAT: { x: 0, y: 170, z: 0 },
         CONTROLS_MAX_DISTANCE: 400,
-        CONTROLS_MIN_DISTANCE: 50
+        CONTROLS_MIN_DISTANCE: 20
     },
     BACTERIUM: {
         CAP_SEGMENTS: 2,
@@ -18,8 +18,20 @@ export const CONFIG = {
         POOL_GROWTH_FACTOR: 1.1,
         WIREFRAME_SCALE: 1.005,
         WIREFRAME_COLOR: 'rgb(100, 100, 100)',
-        NEIGHBOR_RADIUS: 9,
+        NEIGHBOR_RADIUS: 7,
         MAX_NEIGHBORS: 60,
+        COLOR_BY_INHERITANCE: true,
+        POSITIVE_FEEDBACK: true,
+        SIGNAL: {
+            DEFAULT: 0.15,
+            MIN: 0,
+            MAX: 0.3
+        },
+        ALPHA: {
+            DEFAULT: 0.0001,
+            MIN: 0,
+            MAX: 0.001
+        }
     },
     COLORS: {
         MIN_COLOR: 0x0000FF,
@@ -39,8 +51,8 @@ export const CONFIG = {
         Y_MAX: 200,
     },
     PLOT_RENDERER: {
-        MAX_POINTS: 600,
-        POINT_SIZE:3.5,
+        MAX_POINTS: 1000,
+        POINT_SIZE:3,
         AXIS_COLOR: 0x808080,
         PLOT_WIDTH_RATIO: 1/4,
         PLOT_HEIGHT_RATIO: 1/4,

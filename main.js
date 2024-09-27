@@ -1,5 +1,5 @@
 import { setupScene } from './sceneSetup.js';
-import { createBacteriumSystem, updateBacteria, getMagentaCount, getCyanCount, clearColorMemo } from './bacteriumSystem.js';
+import { createBacteriumSystem, updateBacteria, getMagentaCount, getCyanCount, clearColorMemo, setSignalValue, setAlphaValue, getAverageSimilarityWithNeighbors } from './bacteriumSystem.js';
 import { CONFIG } from './config.js';
 import { initPlotRenderer, renderPlot, updatePlot } from './plotRenderer.js';
 import { Histogram } from './histogram.js';
@@ -11,6 +11,7 @@ let numberOfTimeSteps = 0;
 let totalBacteriaCountHistory = [];
 let magentaBacteriaCountHistory = [];
 let cyanBacteriaCountHistory = [];
+let averageSimilarityHistory = [];
 let IDsContainedInCurrentTimeStep = new Set();
 let previousIDsContainedInTimeStep = new Set();
 
@@ -58,7 +59,6 @@ const processFileData = (e) => {
         console.log('Number of time steps:', numberOfTimeSteps);
     } catch (error) {
         console.error('Error processing file:', error);
-
     }
 };
 
@@ -77,6 +77,7 @@ const resetDataStructures = () => {
     totalBacteriaCountHistory = [];
     magentaBacteriaCountHistory = [];
     cyanBacteriaCountHistory = [];
+    averageSimilarityHistory = [];
     histogram.reset();
 };
 
@@ -102,6 +103,37 @@ const updateTimeStepInfo = () => {
 
 // Add event listener for file input
 document.getElementById('fileInput').addEventListener('change', handleFileInput);
+
+// Add event listener for toggle button
+document.getElementById('toggleColorButton').addEventListener('click', () => {
+    CONFIG.BACTERIUM.COLOR_BY_INHERITANCE = !CONFIG.BACTERIUM.COLOR_BY_INHERITANCE;
+    console.log('COLOR_BY_INHERITANCE toggled:', CONFIG.BACTERIUM.COLOR_BY_INHERITANCE);
+});
+
+document.getElementById('toggleFeedbackButton').addEventListener('click', () => {
+    CONFIG.BACTERIUM.POSITIVE_FEEDBACK = !CONFIG.BACTERIUM.POSITIVE_FEEDBACK;
+    console.log('POSITIVE_FEEDBACK toggled:', CONFIG.BACTERIUM.POSITIVE_FEEDBACK);
+});
+
+// Add event listener for signal slider
+const signalSlider = document.getElementById('signalSlider');
+const signalValue = document.getElementById('signalValue');
+
+signalSlider.addEventListener('input', (event) => {
+    const value = parseFloat(event.target.value);
+    signalValue.textContent = value.toFixed(2);
+    setSignalValue(bacteriumSystem, value);
+});
+
+// Add event listener for alpha slider
+const alphaSlider = document.getElementById('alphaSlider');
+const alphaValue = document.getElementById('alphaValue');
+
+alphaSlider.addEventListener('input', (event) => {
+    const value = parseFloat(event.target.value);
+    alphaValue.textContent = value.toFixed(5);
+    setAlphaValue(bacteriumSystem, value);
+});
 
 /**
  * Animation loop
@@ -138,24 +170,37 @@ const updateScene = () => {
         const magentaCount = getMagentaCount(bacteriumSystem);
         const cyanCount = getCyanCount(bacteriumSystem);
         const totalCount = currentBacteria ? currentBacteria.length : 0;
+        const averageSimilarity = getAverageSimilarityWithNeighbors(bacteriumSystem);
+
+        // Log the average similarity
+        //console.log('Average Similarity:', averageSimilarity);
 
         totalBacteriaCountHistory.push(totalCount);
         magentaBacteriaCountHistory.push(magentaCount);
         cyanBacteriaCountHistory.push(cyanCount);
+        
+        // Only add averageSimilarity to history if it's a valid number
+        if (!isNaN(averageSimilarity) && isFinite(averageSimilarity)) {
+            averageSimilarityHistory.push((averageSimilarity-0.5)*2800);
+        } else {
+            console.warn('Invalid average similarity:', averageSimilarity);
+            // Optionally, you can push the last valid value or 0
+            averageSimilarityHistory.push(averageSimilarityHistory.length > 0 ? averageSimilarityHistory[averageSimilarityHistory.length - 1] : 0);
+        }
 
         // Update the plot every frame
         updatePlot(
             totalBacteriaCountHistory,
             magentaBacteriaCountHistory,
-            cyanBacteriaCountHistory
+            cyanBacteriaCountHistory,
+            averageSimilarityHistory
         );
 
         // Swap the sets instead of creating a new one
         [previousIDsContainedInTimeStep, IDsContainedInCurrentTimeStep] = [IDsContainedInCurrentTimeStep, previousIDsContainedInTimeStep];
 
-       
         currentTimeStep = (currentTimeStep + 1) % numberOfTimeSteps;
-        //clean color memo if the current time step is 0
+        // Clean color memo if the current time step is 0
         if (currentTimeStep === 0) {
             clearColorMemo(bacteriumSystem);
             histogram.reset();

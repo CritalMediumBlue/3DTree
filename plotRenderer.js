@@ -17,6 +17,7 @@ class PlotRenderer {
         this.totalPlotPoints = null;
         this.magentaPlotPoints = null;
         this.cyanPlotPoints = null;
+        this.similarityPlotPoints = null;
         this.yTicks = null;
         this.needsRender = false;
         this.currentIndex = 0;
@@ -65,6 +66,7 @@ class PlotRenderer {
         this.totalGeometry = createGeometry();
         this.magentaGeometry = createGeometry();
         this.cyanGeometry = createGeometry();
+        this.similarityGeometry = createGeometry();
     }
 
     /**
@@ -75,6 +77,7 @@ class PlotRenderer {
         this.totalMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
         this.magentaMaterial = new THREE.PointsMaterial({ color: 0xff00ff, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
         this.cyanMaterial = new THREE.PointsMaterial({ color: 0x00ffff, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
+        this.similarityMaterial = new THREE.PointsMaterial({ color: 0xffff00, size: CONFIG.PLOT_RENDERER.POINT_SIZE });
     }
 
     /**
@@ -85,8 +88,9 @@ class PlotRenderer {
         this.totalPlotPoints = new THREE.Points(this.totalGeometry, this.totalMaterial);
         this.magentaPlotPoints = new THREE.Points(this.magentaGeometry, this.magentaMaterial);
         this.cyanPlotPoints = new THREE.Points(this.cyanGeometry, this.cyanMaterial);
+        this.similarityPlotPoints = new THREE.Points(this.similarityGeometry, this.similarityMaterial);
 
-        this.scene2D.add(this.totalPlotPoints, this.magentaPlotPoints, this.cyanPlotPoints);
+        this.scene2D.add(this.totalPlotPoints, this.magentaPlotPoints, this.cyanPlotPoints, this.similarityPlotPoints);
     }
 
     /**
@@ -131,8 +135,9 @@ class PlotRenderer {
      * @param {number[]} totalHistory - Array of total bacteria counts.
      * @param {number[]} magentaHistory - Array of magenta bacteria counts.
      * @param {number[]} cyanHistory - Array of cyan bacteria counts.
+     * @param {number[]} similarityHistory - Array of similarity values.
      */
-    updatePlot(totalHistory, magentaHistory, cyanHistory) {
+    updatePlot(totalHistory, magentaHistory, cyanHistory, similarityHistory) {
         const updateGeometry = (geometry, history) => {
             const positions = geometry.attributes.position.array;
             const xStep = 4 / CONFIG.PLOT_RENDERER.MAX_POINTS;
@@ -154,6 +159,7 @@ class PlotRenderer {
         updateGeometry(this.totalPlotPoints.geometry, totalHistory);
         updateGeometry(this.magentaPlotPoints.geometry, magentaHistory);
         updateGeometry(this.cyanPlotPoints.geometry, cyanHistory);
+        updateGeometry(this.similarityPlotPoints.geometry, similarityHistory);
         
         this.currentIndex++;
         if (this.currentIndex > CONFIG.PLOT_RENDERER.MAX_POINTS) {
@@ -190,9 +196,10 @@ export function initPlotRenderer() {
  * @param {number[]} totalHistory - Array of total bacteria counts.
  * @param {number[]} magentaHistory - Array of magenta bacteria counts.
  * @param {number[]} cyanHistory - Array of cyan bacteria counts.
+ * @param {number[]} similarityHistory - Array of similarity values.
  */
-export function updatePlot(totalHistory, magentaHistory, cyanHistory) {
-    plotRendererInstance.updatePlot(totalHistory, magentaHistory, cyanHistory);
+export function updatePlot(totalHistory, magentaHistory, cyanHistory, similarityHistory) {
+    plotRendererInstance.updatePlot(totalHistory, magentaHistory, cyanHistory, similarityHistory);
 }
 
 /**

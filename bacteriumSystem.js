@@ -6,36 +6,97 @@ import { BacteriumPool } from './bacteriumPool.js';
 class ColorManager {
     constructor() {
         this.colorMemo = new Map();
+        this.signal = CONFIG.BACTERIUM.SIGNAL.DEFAULT/100;
+        this.alpha = CONFIG.BACTERIUM.ALPHA.DEFAULT*3;
+
     }
 
-    inheritanceColor(ID) {
-        if (this.colorMemo.has(ID)) {
-            return this.colorMemo.get(ID);
-        }
+    setSignalValue(value) {
+        this.signal = Math.max(CONFIG.BACTERIUM.SIGNAL.MIN, Math.min(CONFIG.BACTERIUM.SIGNAL.MAX, value))/100;
+    }
 
-        let currentID = ID;
-        while (currentID > 2000n) {
-            currentID = currentID / 2n;
+    setAlphaValue(value) {
+        this.alpha = Math.max(CONFIG.BACTERIUM.ALPHA.MIN, Math.min(CONFIG.BACTERIUM.ALPHA.MAX, value))*3;
+    }
+
+    inheritanceColor(ID, neighbors) {
+        const totalNeighbors = neighbors[0];
+        const magentaNeighbors = neighbors[1];
+        const cyanNeighbors = neighbors[2];
+
+        const proportionMagenta = magentaNeighbors / totalNeighbors;    
+        const proportionCyan = cyanNeighbors / totalNeighbors;
+
+        let K_c2m;
+        let K_m2c;
+
+        if (CONFIG.BACTERIUM.POSITIVE_FEEDBACK) {
+            K_c2m = this.alpha + proportionMagenta * this.signal;
+            K_m2c = this.alpha + proportionCyan * this.signal;
+        } else {
+            K_c2m = this.alpha + proportionCyan * this.signal;
+            K_m2c = this.alpha + proportionMagenta * this.signal;
+        }
+        
+        let color;
+        if (this.colorMemo.has(ID)) {
+            const originalColor = this.colorMemo.get(ID);
+            const rand = Math.random();
+            
+            const magentaColor = new THREE.Color(CONFIG.COLORS.MAGENTA_PHENOTYPE);
+            const cyanColor = new THREE.Color(CONFIG.COLORS.CYAN_PHENOTYPE);
+            
+            if (originalColor.equals(magentaColor)) {
+                color = rand < K_m2c ? cyanColor : magentaColor;
+            } else if (originalColor.equals(cyanColor)) {
+                color = rand < K_c2m ? magentaColor : cyanColor;
+            } 
+            
+            this.colorMemo.set(ID, color);
+            return color;
+        } else if (ID > 2000n) {
+            let currentID = ID / 2n;
             if (this.colorMemo.has(currentID)) {
                 const color = this.colorMemo.get(currentID);
                 this.colorMemo.set(ID, color);
                 return color;
             }
+        } else if (ID >= 1000n && ID <= 2000n){
+            let random = Math.random();
+            color = random < 0.5 ? new THREE.Color(CONFIG.COLORS.MAGENTA_PHENOTYPE) : new THREE.Color(CONFIG.COLORS.CYAN_PHENOTYPE);
+
+            this.colorMemo.set(ID, color);
+            return color;
         }
-
-        // Assign color for initial bacteria or unknown IDs
-        const color = (currentID >= 1000n && currentID <= 2000n) ?
-            (Math.random() < 0.5 ? new THREE.Color(CONFIG.COLORS.MAGENTA_PHENOTYPE) : new THREE.Color(CONFIG.COLORS.CYAN_PHENOTYPE))
-            : new THREE.Color(CONFIG.COLORS.DEFAULT_PHENOTYPE);
-
-        this.colorMemo.set(ID, color);
-        return color;
     }
 
-    setColorBasedOnPhenotypeInheritance(bacterium, ID) {
-        const color = this.inheritanceColor(ID);
-        bacterium.material.color.set(color);
-        bacterium.children[0].material.color.set(color.clone().multiplyScalar(0.5)); // Darker color for wireframe
+    setColorBasedOnPhenotypeInheritance(bacterium, ID, neighbors) {
+        const color = this.inheritanceColor(ID, neighbors);
+        const totalNeighbors = neighbors[0];
+        const magentaCount = neighbors[1];
+        const cyanCount = neighbors[2];
+        const magentaProportion = magentaCount / totalNeighbors;
+        const cyanProportion = cyanCount / totalNeighbors;
+        let scalar;
+            
+        if (color.equals(new THREE.Color(CONFIG.COLORS.MAGENTA_PHENOTYPE))) {
+
+            scalar = Math.round(magentaProportion * 255);
+            bacterium.similarity = magentaProportion;
+            
+        } else if (color.equals(new THREE.Color(CONFIG.COLORS.CYAN_PHENOTYPE))) {
+            scalar = Math.round(cyanProportion * 255);
+            bacterium.similarity = cyanProportion;
+        }
+
+        if (CONFIG.BACTERIUM.COLOR_BY_INHERITANCE) {
+            bacterium.material.color.set(color);
+            bacterium.children[0].material.color.set(color.clone().multiplyScalar(0.5)); // Darker color for wireframe
+        } else if (!CONFIG.BACTERIUM.COLOR_BY_INHERITANCE) {
+            const color = new THREE.Color(`rgb(${scalar}, ${scalar}, ${255-scalar})`);          
+            bacterium.material.color.set(color);
+            bacterium.children[0].material.color.set(color.clone().multiplyScalar(0.5)); // Darker color for wireframe
+        }    
     }
 
     getMagentaCount(currentTimestepBacteria) {
@@ -47,9 +108,10 @@ class ColorManager {
     }
 
     getColorCount(currentTimestepBacteria, targetColor) {
+        const targetThreeColor = new THREE.Color(targetColor);
         return Array.from(currentTimestepBacteria).reduce((count, ID) => {
             const color = this.colorMemo.get(ID);
-            return color && color.equals(new THREE.Color(targetColor)) ? count + 1 : count;
+            return color && color.equals(targetThreeColor) ? count + 1 : count;
         }, 0);
     }
 
@@ -95,6 +157,7 @@ export class BacteriumSystem {
         this.currentTimestepBacteria = new Set();
         this.colorManager = new ColorManager();
         this.geometryManager = new GeometryManager();
+        this.averageSimilarityWithNeighbors = 0;
     }
 
     buildQuadtree(layer) {
@@ -107,7 +170,38 @@ export class BacteriumSystem {
         });
     }
 
+    countNeighbors(x, y) {
+        const neighborRadius = CONFIG.BACTERIUM.NEIGHBOR_RADIUS;
+        let totalCount = 0;
+        let magentaCount = 0;
+        let cyanCount = 0;
+
+        this.quadtree.visit((node, x1, y1, x2, y2) => {
+            if (!node.length) {
+                do {
+                    if (node.data) {
+                        const dx = node.data.x - x;
+                        const dy = node.data.y - y;
+                        if (dx * dx + dy * dy < neighborRadius * neighborRadius) {
+                            totalCount++;
+                            const color = this.colorManager.colorMemo.get(node.data.ID);
+                            if (color && color.equals(new THREE.Color(CONFIG.COLORS.MAGENTA_PHENOTYPE))) {
+                                magentaCount++;
+                            } else if (color && color.equals(new THREE.Color(CONFIG.COLORS.CYAN_PHENOTYPE))) {
+                                cyanCount++;
+                            }
+                        }
+                    }
+                } while (node = node.next);
+            }
+            return x1 > x + neighborRadius || x2 < x - neighborRadius || y1 > y + neighborRadius || y2 < y - neighborRadius;
+        });
+
+        return [totalCount, magentaCount, cyanCount];
+    }
+
     updateBacteria(timeStep, bacteriumData) {
+        this.averageSimilarityWithNeighbors = 0;
         const z = 0;
         const layer = bacteriumData.get(timeStep) || [];
 
@@ -119,19 +213,17 @@ export class BacteriumSystem {
             const bacterium = this.bacteriumPool.getBacterium();
             this.updateBacterium(bacterium, data, z);
             this.currentTimestepBacteria.add(data.ID);
+            this.averageSimilarityWithNeighbors += bacterium.similarity;
         });
+
+        // Calculate average similarity with neighbors
+        if (layer.length > 0) {
+            this.averageSimilarityWithNeighbors /= layer.length;
+        } else {
+            this.averageSimilarityWithNeighbors = 0;
+        }
     }
-/**
- * Updates a bacterium's properties based on the provided data
- * @param {THREE.Mesh} bacterium - The bacterium mesh to update
- * @param {Object} bacteriumData - The data for the bacterium
- * @param {number} bacteriumData.x - The x-coordinate
- * @param {number} bacteriumData.y - The y-coordinate
- * @param {number} bacteriumData.length - The length of the bacterium
- * @param {number} bacteriumData.angle - The angle of the bacterium
- * @param {BigInt} bacteriumData.ID - The unique identifier of the bacterium
- * @param {number} zPosition - The z-coordinate for the bacterium
- */
+
     updateBacterium(bacterium, bacteriumData, zPosition) {
         if (!bacterium || !bacteriumData) {
             console.error('Invalid input to updateBacterium');
@@ -148,8 +240,13 @@ export class BacteriumSystem {
     
         this.setBacteriumTransform(bacterium, adjustedPosition, angle, zPosition);
         this.geometryManager.updateGeometry(bacterium, adjustedLength);
-        this.colorManager.setColorBasedOnPhenotypeInheritance(bacterium, ID);
+        
+        const neighbors = this.countNeighbors(x, y);
+        this.colorManager.setColorBasedOnPhenotypeInheritance(bacterium, ID, neighbors);
+
+        
         bacterium.visible = true;
+
     }
 
     setBacteriumTransform(bacterium, position, angle, zPosition) {
@@ -161,12 +258,25 @@ export class BacteriumSystem {
         return this.colorManager.getMagentaCount(this.currentTimestepBacteria);
     }
 
+
     getCyanCount() {
         return this.colorManager.getCyanCount(this.currentTimestepBacteria);
     }
 
+    getAverageSimilarityWithNeighbors() {
+        return isNaN(this.averageSimilarityWithNeighbors) ? 0 : this.averageSimilarityWithNeighbors;
+    }
+
     clearColorMemo() {
         this.colorManager.clearColorMemo();
+    }
+
+    setSignalValue(value) {
+        this.colorManager.setSignalValue(value);
+    }
+
+    setAlphaValue(value) {
+        this.colorManager.setAlphaValue(value);
     }
 }
 
@@ -188,4 +298,16 @@ export function getCyanCount(bacteriumSystem) {
 
 export function clearColorMemo(bacteriumSystem) {
     bacteriumSystem.clearColorMemo();
+}
+
+export function setSignalValue(bacteriumSystem, value) {
+    bacteriumSystem.setSignalValue(value);
+}
+
+export function setAlphaValue(bacteriumSystem, value) {
+    bacteriumSystem.setAlphaValue(value);
+}
+
+export function getAverageSimilarityWithNeighbors(bacteriumSystem) {
+    return bacteriumSystem.getAverageSimilarityWithNeighbors();
 }

@@ -20,6 +20,25 @@
     <!-- File input for uploading JSON files -->
     <input type="file" id="fileInput" accept=".json" />
     
+    <!-- Button to toggle COLOR_BY_INHERITANCE -->
+    <button id="toggleColorButton">Phenotype/Similarity</button>
+
+    <!-- Button to toggle POSITIVE_FEEDBACK -->
+    <button id="toggleFeedbackButton">Type of Signaling</button>
+    
+    <!-- Slider for adjusting the signal value -->
+    <div>
+        <label for="signalSlider">Signal Strength:</label>
+        <input type="range" id="signalSlider" min="0" max="0.3" step="0.001" value="0.15">
+        <span id="signalValue">0.15</span>
+    </div>
+    <!-- Slider for adjusting the alpha value -->
+    <div>
+        <label for="alphaSlider">Temperature:</label>
+        <input type="range" id="alphaSlider" min="0" max="0.001" step="0.00001" value="0.0001">
+        <span id="alphaValue">0.0001</span>
+    </div>
+    
     <!-- Container for the 3D scene -->
     <div id="scene-container"></div>
     
