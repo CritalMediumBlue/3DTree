@@ -72,6 +72,8 @@ const initializeBacteriumData = (data) => {
     updateTimeStepInfo();
 };
 
+let IDsAddedToHistogram = new Set();
+
 const resetDataStructures = () => {
     bacteriumData.clear();
     totalBacteriaCountHistory = [];
@@ -161,8 +163,17 @@ const updateScene = () => {
         if (currentBacteria) {
             for (const bacterium of currentBacteria) {
                 IDsContainedInCurrentTimeStep.add(bacterium.ID);
-                if (!previousIDsContainedInTimeStep.has(bacterium.ID)) {
-                    histogram.addBacterium(bacterium.x, bacterium.y);
+                const bacteriumID = bacterium.ID;
+                const bacteriumIDHalf = bacterium.ID / 2n;
+                
+                if (bacteriumSystem.colorManager.colorMemo.has(bacteriumID) && bacteriumSystem.colorManager.colorMemo.has(bacteriumIDHalf)) {
+                    const colorID = bacteriumSystem.colorManager.colorMemo.get(bacteriumID);
+                    const colorIDHalf = bacteriumSystem.colorManager.colorMemo.get(bacteriumIDHalf);
+        
+                    if (!areColorsEqual(colorID, colorIDHalf) && !IDsAddedToHistogram.has(bacteriumID)) {
+                        histogram.addBacterium(bacterium.x, bacterium.y);
+                        IDsAddedToHistogram.add(bacteriumID);
+                    }
                 }
             }
         }
@@ -203,11 +214,14 @@ const updateScene = () => {
         // Clean color memo if the current time step is 0
         if (currentTimeStep === 0) {
             clearColorMemo(bacteriumSystem);
-            histogram.reset();
+            //histogram.reset();
             previousIDsContainedInTimeStep.clear();
             // Don't reset the history arrays when the simulation loops back to the beginning
             // This allows the plot to continue showing data beyond the initial cycle
         }
+    }
+    function areColorsEqual(color1, color2) {
+        return color1.r === color2.r && color1.g === color2.g && color1.b === color2.b;
     }
 };
 

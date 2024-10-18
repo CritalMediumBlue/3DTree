@@ -4,7 +4,7 @@ import { CONFIG } from './config.js';
 export class BacteriumPool {
     constructor(scene, initialSize) {
         this.scene = scene;
-        this.bacteria = [];
+        this.bacteria = []; 
         this.activeCount = 0;
         this.growthFactor = CONFIG.BACTERIUM.POOL_GROWTH_FACTOR;
         this.expandPool(initialSize);
