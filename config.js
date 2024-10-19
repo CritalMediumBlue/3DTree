@@ -44,7 +44,7 @@ export const CONFIG = {
         GRID_SIZE: 40,
         CUBE_SIZE: 0.2,
         COLOR: 0x808080,
-        OPACITY: 0.8,
+        OPACITY: 0.5,
         X_MIN: -50,
         X_MAX: 50,
         Y_MIN: 140,
